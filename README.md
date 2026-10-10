@@ -2,6 +2,20 @@
 
 > **Build iOS apps on Ubuntu Linux.** Compile Swift and SwiftUI projects, sign iOS apps, create IPAs, and upload builds to TestFlight/App Store Connect without running the Xcode app or requiring a Mac for the build pipeline.
 
+
+## Start here
+
+```bash
+git clone https://github.com/VeloxityNL/ubuntu-ios-toolchain.git
+cd ubuntu-ios-toolchain
+./install-ubuntu.sh
+ubuntu-ios doctor
+```
+
+Then import the SDK from **your own legally obtained Xcode `.xip`** with `ubuntu-ios sdk /path/to/Xcode.xip`. The repository does not ship Xcode, Apple SDKs, certificates, provisioning profiles, or credentials.
+
+**New here?** See [Getting Started](GETTING-STARTED.md), the [HelloSwiftUI example](examples/HelloSwiftUI/README.md), [Roadmap](ROADMAP.md), and [Changelog](CHANGELOG.md).
+
 **Keywords:** iOS development on Linux · build iOS on Ubuntu · SwiftUI Linux · Xcode alternative for Ubuntu · TestFlight from Linux · iOS cross-compilation
 
 [![Validate](https://github.com/VeloxityNL/ubuntu-ios-toolchain/actions/workflows/validate.yml/badge.svg)](https://github.com/VeloxityNL/ubuntu-ios-toolchain/actions/workflows/validate.yml) [![GitHub release](https://img.shields.io/github/v/release/VeloxityNL/ubuntu-ios-toolchain)](https://github.com/VeloxityNL/ubuntu-ios-toolchain/releases/latest) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
