@@ -4,6 +4,10 @@
 
 **Keywords:** iOS development on Linux · build iOS on Ubuntu · SwiftUI Linux · Xcode alternative for Ubuntu · TestFlight from Linux · iOS cross-compilation
 
+[![Validate](https://github.com/VeloxityNL/ubuntu-ios-toolchain/actions/workflows/validate.yml/badge.svg)](https://github.com/VeloxityNL/ubuntu-ios-toolchain/actions/workflows/validate.yml) [![GitHub release](https://img.shields.io/github/v/release/VeloxityNL/ubuntu-ios-toolchain)](https://github.com/VeloxityNL/ubuntu-ios-toolchain/releases/latest) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+**Target:** Ubuntu 24.04 LTS x86_64 · **Status:** early public release — clean-machine reports and compatibility feedback are welcome.
+
 Build, sign, install, and upload native iOS / SwiftUI apps **from Ubuntu Linux** — without running macOS or the Xcode application.
 
 This repository packages a reproducible Ubuntu workflow around the official Swift toolchain, `xtool`, `rcodesign`, `pymobiledevice3`, Linux replacements for Apple build utilities, and an iOS SDK extracted from an Xcode archive supplied by the user.

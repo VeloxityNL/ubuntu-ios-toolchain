@@ -1,0 +1,24 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  shell:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax-check shell entry points
+        run: bash -n install-ubuntu.sh ubuntu-ios ship.sh
+      - name: Reject accidentally committed signing secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find . -type f \( -name '*.p8' -o -name '*.p12' -o -name '*.mobileprovision' -o -name '*.key' \) -not -path './.git/*' | grep -q .; then
+            echo 'Sensitive signing material must not be committed.'
+            exit 1
+          fi
