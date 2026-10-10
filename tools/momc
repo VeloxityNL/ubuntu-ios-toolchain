@@ -1,0 +1,1027 @@
+#!/usr/bin/python3
+"""Linux stand-in for Apple's momc (Core Data model compiler), for SwiftBuild under xtool.
+
+SwiftBuild contract (swift-build Sources/SWBApplePlatform, Specs/CoreData.xcspec +
+CoreDataCompiler.swift):
+  compile:  momc [--sdkroot P] [--iphoneos-deployment-target V] [--module M]
+            [--no-warnings ...] InputFile ProductResourcesDir/
+            -> writes ProductResourcesDir/<base>.momd (versioned .xcdatamodeld: one
+               <version>.mom per version + VersionInfo.plist) or <base>.mom (bare
+               .xcdatamodel). The destination directory must already exist.
+  codegen:  momc [--dry-run] --action generate [--swift-version V] [options] InputFile
+            DERIVED_FILE_DIR/CoreDataGenerated/<ModelName>
+            --dry-run prints the absolute paths of the files it would generate, one per line,
+            and nothing at all when no entity opts into code generation; --action generate
+            writes those files (entities with codeGenerationType=class get
+            <Entity>+CoreDataClass.swift and +CoreDataProperties.swift, category gets only the
+            properties file, plus one <Model>+CoreDataModel.swift when anything is generated).
+Output matches Xcode 27.0 momc (tool version 25249): NSKeyedArchiver binary-plist .mom per
+version with the same keys, VersionInfo.plist, `note: Model <v> version checksum:` lines on
+stderr, `path:Entity.prop: warning: ... [2]` diagnostics, and Xcode 27's generated Swift text.
+Verified against Apple's momc on macOS: model loader comparison, store round trip.
+"""
+import base64
+import hashlib
+import os
+import plistlib
+import re
+import shutil
+import sys
+import tempfile
+import xml.etree.ElementTree as ET
+from datetime import datetime
+from pathlib import Path
+
+FULL_NAME = "Joshua Warren"  # Apple's generated header uses the account full name.
+COMPILER_TOOL_VERSION = 25249.0
+COMPILER_XCODE_VERSION = 270000
+USAGE = ("usage: momc --sdkroot=<path> [--appletvos-deployment-target] [--driverkit-deployment-target] "
+         "[--iphoneos-deployment-target] [--macosx-deployment-target] [--watchos-deployment-target] "
+         "[--xros-deployment-target] [--action <compile|generate>] [--module <module>] "
+         "[--swift-version <swift_version>][--print-diagnostic-categories] [--no-warnings] "
+         "[--no-inverse-relationship-warnings] [--no-max-property-count-warnings] "
+         "[--no-delete-rule-warnings] [--dump-models] [--dry-run] source destination")
+
+# NSAttributeType numbers as Xcode 27 momc writes them (Float=600, Decimal=400 as observed).
+ATTR_TYPES = {
+    "Integer 16": 100, "Integer 32": 200, "Integer 64": 300,
+    "Decimal": 400, "Double": 500, "Float": 600,
+    "String": 700, "Boolean": 800, "Date": 900,
+    "Binary": 1000, "UUID": 1100, "URI": 1200, "Transformable": 1800,
+}
+ATTR_CLASSES = {
+    100: "NSNumber", 200: "NSNumber", 300: "NSNumber", 400: "NSDecimalNumber",
+    500: "NSNumber", 600: "NSNumber", 700: "NSString", 800: "NSNumber",
+    900: "NSDate", 1000: "NSData", 1100: "NSUUID", 1200: "NSURL",
+}
+DELETE_RULES = {"no action": 0, "nullify": 1, "cascade": 2, "deny": 3}
+
+CLASSES = {
+    "model": ("NSManagedObjectModel", ("NSObject",)),
+    "entity": ("NSEntityDescription", ("NSObject",)),
+    "attr": ("NSAttributeDescription", ("NSPropertyDescription", "NSObject")),
+    "rel": ("NSRelationshipDescription", ("NSPropertyDescription", "NSObject")),
+    "fetchrequest": ("NSFetchRequest", ("NSPersistentStoreRequest", "NSObject")),
+    "index": ("NSFetchIndexDescription", ("NSObject",)),
+    "indexel": ("NSFetchIndexElementDescription", ("NSObject",)),
+    "comp": ("NSComparisonPredicate", ("NSPredicate", "NSObject")),
+    "compoundpred": ("NSCompoundPredicate", ("NSPredicate", "NSObject")),
+    "eqop": ("NSEqualityPredicateOperator", ("NSPredicateOperator", "NSObject")),
+    "cmpop": ("NSComparisonPredicateOperator", ("NSPredicateOperator", "NSObject")),
+    "likeop": ("NSLikePredicateOperator", ("NSMatchingPredicateOperator",
+                                           "NSStringPredicateOperator", "NSPredicateOperator", "NSObject")),
+    "matchop": ("NSMatchingPredicateOperator", ("NSStringPredicateOperator",
+                                                "NSPredicateOperator", "NSObject")),
+    "subop": ("NSSubstringPredicateOperator", ("NSStringPredicateOperator",
+                                               "NSPredicateOperator", "NSObject")),
+    "inop": ("NSInPredicateOperator", ("NSPredicateOperator", "NSObject")),
+    "betweenop": ("NSBetweenPredicateOperator", ("NSPredicateOperator", "NSObject")),
+    "keypath": ("NSKeyPathExpression", ("NSFunctionExpression", "NSExpression", "NSObject")),
+    "self": ("NSSelfExpression", ("NSExpression", "NSObject")),
+    "keyspec": ("NSKeyPathSpecifierExpression", ("NSExpression", "NSObject")),
+    "variable": ("NSVariableExpression", ("NSExpression", "NSObject")),
+    "constant": ("NSConstantValueExpression", ("NSExpression", "NSObject")),
+    "date": ("NSDate", ("NSObject",)),
+    "decimal": ("NSDecimalNumberPlaceholder", ("NSDecimalNumber", "NSNumber", "NSValue", "NSObject")),
+    "mdict": ("NSMutableDictionary", ("NSDictionary", "NSObject")),
+    "dict": ("NSDictionary", ("NSObject",)),
+    "marray": ("NSMutableArray", ("NSArray", "NSObject")),
+    "array": ("NSArray", ("NSObject",)),
+    "set": ("NSSet", ("NSObject",)),
+}
+
+
+def die(msg, code=1):
+    print(f"error: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+def parse_args(argv):
+    opts = {"action": "compile", "module": "", "swift_version": "", "dry_run": False,
+            "no_warnings": False}
+    pos = []
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a == "--help":
+            print(USAGE)
+            sys.exit(0)
+        if a in ("--version", "-version"):
+            print(USAGE, file=sys.stderr)  # Apple momc prints usage and exits 1
+            sys.exit(1)
+        if a in ("--action", "--module", "--swift-version", "--sdkroot") or \
+                a.startswith("--") and a.endswith("-deployment-target"):
+            if "=" in a:
+                val = a.split("=", 1)[1]
+            else:
+                if i + 1 >= len(argv):
+                    print(USAGE, file=sys.stderr)
+                    sys.exit(1)
+                val = argv[i + 1]
+                i += 1
+            key = {"--action": "action", "--module": "module",
+                   "--swift-version": "swift_version", "--sdkroot": "sdkroot"}.get(a, "deployment_target")
+            opts[key] = val
+        elif a == "--dry-run":
+            opts["dry_run"] = True
+        elif a == "--no-warnings":
+            opts["no_warnings"] = True
+        elif a.startswith("-"):
+            pass  # --print-diagnostic-categories, --no-*-warnings, --dump-models: accepted no-ops
+        else:
+            pos.append(a)
+        i += 1
+    if len(pos) != 2:
+        print(USAGE, file=sys.stderr)
+        sys.exit(1)
+    opts["input"], opts["dest"] = pos
+    return opts
+
+
+# ------------------------------------------------------------------- model XML
+
+class Attr:
+    def __init__(self, el):
+        self.name = el.get("name")
+        self.renaming = el.get("elementID") or self.name  # momc uses elementID
+        t = el.get("attributeType")
+        if t not in ATTR_TYPES:
+            die(f"{self.name} must have a defined type")
+        self.type = ATTR_TYPES[t]
+        self.type_name = t
+        self.optional = el.get("optional") == "YES"
+        self.transient = el.get("transient") == "YES"
+        self.external = el.get("allowsExternalBinaryDataStorage") == "YES"
+        self.scalar = el.get("usesScalarValueType") == "YES"
+        self.transformer = el.get("valueTransformerName")
+        self.custom_class = el.get("customClassName")
+        self.default = None
+        s = el.get("defaultValueString")
+        if s is not None:
+            self.default = ("bool", s in ("YES", "true")) if self.type == 800 else \
+                ("string", s) if self.type in (700, 1800) else \
+                ("decimal", s) if self.type == 400 else \
+                ("float", float(s)) if self.type in (500, 600) else ("number", int(s))
+        if el.get("defaultDateTimeInterval") is not None:
+            self.default = ("date", float(el.get("defaultDateTimeInterval")))
+
+
+class Rel:
+    def __init__(self, el):
+        self.name = el.get("name")
+        self.renaming = el.get("elementID") or self.name  # momc uses elementID
+        self.optional = el.get("optional") == "YES"
+        self.to_many = el.get("toMany") == "YES"
+        self.ordered = el.get("ordered") == "YES"
+        self.min_count = int(el.get("minCount", "0"))
+        self.max_count = int(el.get("maxCount", "0" if self.to_many else "1"))
+        self.delete_rule = DELETE_RULES.get(el.get("deletionRule", "Nullify").lower(), 1)
+        self.dest = el.get("destinationEntity")
+        self.inverse_name = el.get("inverseName")
+        self.inverse_entity = el.get("inverseEntity")
+
+
+class Index:
+    def __init__(self, el):
+        self.name = el.get("name")
+        self.elements = [(e.get("property"), e.get("order") != "descending")
+                         for e in el.findall("fetchIndexElement")]
+
+
+class Entity:
+    def __init__(self, el):
+        self.name = el.get("name")
+        self.class_name = el.get("representedClassName") or self.name
+        self.abstract = el.get("isAbstract") == "YES"
+        self.renaming = self.name  # momc writes the entity name, ignoring the XML attribute
+        self.hash_modifier = el.get("versionHashModifier")
+        self.parent = el.get("parentEntity")
+        self.codegen = el.get("codeGenerationType") or None  # class | category | None (manual)
+        self.user_info = {e.get("key"): e.get("value") for e in el.findall("userInfo/entry")}
+        self.attrs = [Attr(e) for e in el.findall("attribute")]
+        self.rels = [Rel(e) for e in el.findall("relationship")]
+        self.indexes = [Index(e) for e in el.findall("fetchIndex")]
+        self.unique_tuples = [[c.get("value") for c in uc.findall("constraint")]
+                              for uc in el.findall("uniquenessConstraints/uniquenessConstraint")]
+
+
+class FetchRequest:
+    def __init__(self, el):
+        self.name = el.get("name")
+        self.entity = el.get("entity")
+        self.predicate = el.get("predicateString")
+
+
+class Model:
+    def __init__(self, name, dir_path):
+        self.name = name  # version name, e.g. "CoreData 10"
+        self.dir = Path(dir_path)
+        self.identifier = ""
+        self.entities = []
+        self.configurations = []
+        self.fetch_requests = []
+        root = ET.parse(self.dir / "contents").getroot()
+        self.identifier = root.get("userDefinedModelVersionIdentifier") or ""
+        for el in root:
+            if el.tag == "entity":
+                self.entities.append(Entity(el))
+            elif el.tag == "configuration":
+                self.configurations.append(
+                    (el.get("name"), [m.get("name") for m in el.findall("memberEntity")]))
+            elif el.tag == "fetchRequest":
+                self.fetch_requests.append(FetchRequest(el))
+
+
+def load_input(path):
+    """-> (base_name, [Model], current_version_name)."""
+    p = Path(path)
+    if p.suffix == ".xcdatamodeld":
+        cur = None
+        cur_p = p / ".xccurrentversion"
+        if cur_p.exists():
+            cur = plistlib.load(open(cur_p, "rb")).get("_XCCurrentVersionName")
+        dirs = [d for d in p.iterdir() if d.is_dir() and d.suffix == ".xcdatamodel"]
+        if not dirs:
+            die(f"no model versions found in {path}")
+        cur = (cur or dirs[0].name)
+        models = [Model(d.name[:-len(".xcdatamodel")], d) for d in dirs]
+        names = {m.name for m in models}
+        if cur[:-len(".xcdatamodel")] not in names:
+            die(f"current version {cur!r} not found in {path}")
+        return p.name[:-len(".xcdatamodeld")], models, cur[:-len(".xcdatamodel")]
+    if p.suffix == ".xcdatamodel":
+        name = p.name[:-len(".xcdatamodel")]
+        return name, [Model(name, p)], name
+    die(f"unknown input type: {path}")
+
+
+# ------------------------------------------------------ NSKeyedArchiver builder
+
+class Ref:
+    __slots__ = ("key",)
+
+    def __init__(self, key):
+        self.key = key
+
+
+class Node:
+    __slots__ = ("kind", "fields")
+
+    def __init__(self, kind, **fields):
+        self.kind = kind
+        self.fields = fields
+
+
+class Arr:
+    __slots__ = ("items", "mutable")
+
+    def __init__(self, items, mutable=True):
+        self.items = items
+        self.mutable = mutable
+
+
+class Box:
+    """A scalar encoded as an object reference (encodeObject), not inline."""
+    __slots__ = ("v",)
+
+    def __init__(self, v):
+        self.v = v
+
+
+class SetArr(Arr):
+    __slots__ = ("is_set",)
+
+    def __init__(self, items):
+        super().__init__(items, mutable=False)
+        self.is_set = True
+
+
+class Dict:
+    __slots__ = ("items", "mutable")
+
+    def __init__(self, items, mutable=True):
+        self.items = items
+        self.mutable = mutable
+
+
+# ------------------------------------------------------ NSKeyedArchiver writer
+
+class Writer:
+    """Single-pass NSKeyedArchiver writer with named forward references."""
+
+    def __init__(self):
+        self.objects = ["$null"]
+        self.scalars = {}
+        self.classes = {}
+        self.nodes = {}      # key -> body dict (values: raw | Ref | Node | Arr | Dict | SetArr)
+        self.uids = {}       # key -> UID
+        self.order = []
+
+    def declare(self, key, body):
+        self.nodes[key] = body
+        self.order.append(key)
+        return Ref(key)
+
+    def ref(self, key):
+        return Ref(key)
+
+    def _uid(self, v):
+        if v is None:
+            return plistlib.UID(0)
+        if isinstance(v, plistlib.UID):
+            return v
+        if isinstance(v, Ref):
+            return self.uids[v.key]
+        if isinstance(v, Box):
+            key = ("obj", type(v.v).__name__, v.v)
+            if key not in self.scalars:
+                self.objects.append(v.v)
+                self.scalars[key] = plistlib.UID(len(self.objects) - 1)
+            return self.scalars[key]
+        if isinstance(v, (str,)):
+            if v not in self.scalars:
+                self.objects.append(v)
+                self.scalars[v] = plistlib.UID(len(self.objects) - 1)
+            return self.scalars[v]
+        if isinstance(v, (int, float, bool, bytes)):
+            return v  # Apple's momc stores numbers, bools and bytes inline in object bodies
+        if isinstance(v, Arr) and not isinstance(v, SetArr):
+            return self._emit({"NS.objects": [self._uid(x) for x in v.items],
+                               "$class": self._cls("marray" if v.mutable else "array")})
+        if isinstance(v, SetArr):
+            return self._emit({"NS.objects": [self._uid(x) for x in v.items],
+                               "$class": self._cls("set")})
+        if isinstance(v, Dict):
+            return self._emit({"NS.keys": [self._uid(k) for k in v.items],
+                               "NS.objects": [self._uid(x) for x in v.items.values()],
+                               "$class": self._cls("mdict" if v.mutable else "dict")})
+        if isinstance(v, Node):
+            fields = {k: self._uid(x) for k, x in v.fields.items()}
+            fields["$class"] = self._cls(v.kind)
+            return self._emit(fields)
+        die(f"unsupported archive value {v!r}")
+
+    def _cls(self, kind):
+        if kind not in self.classes:
+            name, anc = CLASSES[kind]
+            self.objects.append({"$classname": name, "$classes": [name, *anc]})
+            self.classes[kind] = plistlib.UID(len(self.objects) - 1)
+        return self.classes[kind]
+
+    def _emit(self, body):
+        self.objects.append(body)
+        return plistlib.UID(len(self.objects) - 1)
+
+    def dump(self, root_key):
+        # assign final UIDs to declared objects in declaration order, then serialize
+        for key in self.order:
+            self.objects.append(None)
+            self.uids[key] = plistlib.UID(len(self.objects) - 1)
+        for idx, key in enumerate(self.order):
+            body = self.nodes[key]
+            fields = {k: self._uid(x) for k, x in body.items()}
+            fields["$class"] = self._cls(node_kinds[key])
+            self.objects[self.objects.index(None)] = fields
+        doc = {"$version": 100000, "$archiver": "NSKeyedArchiver",
+               "$top": {"root": self.uids[root_key]}, "$objects": self.objects}
+        return plistlib.dumps(doc, fmt=plistlib.FMT_BINARY)
+
+
+node_kinds = {}
+
+# ------------------------------------------------------------------- compile
+
+def build_mom_data(model, opts):
+    w = Writer()
+    ents_by_name = {e.name: e for e in model.entities}
+
+    def class_name(ent):
+        # representedClassName ".X" means "current product module": momc resolves the
+        # leading dot to --module when one is passed, and keeps bare names untouched.
+        cn = ent.class_name
+        if cn.startswith(".") and opts["module"]:
+            return opts["module"] + cn
+        return cn
+
+    # property objects (need refs to their entity, inverse rels, dest entities)
+    prop_keys = {}
+
+    def prop_body_key(ent_name, prop_name):
+        return f"prop:{ent_name}:{prop_name}"
+
+    for e in model.entities:
+        for at in e.attrs:
+            key = prop_body_key(e.name, at.name)
+            node_kinds[key] = "attr"
+            w.declare(key, {
+                "NSDefaultValue": default_value(at),
+                "_P": 241 + (2 if at.optional else 0) + (8 if at.transient else 0),
+                "NSAttributeType": at.type,
+                "NSAttributeValueClassName": (at.custom_class if at.type == 1800 and at.custom_class
+                                              else ATTR_CLASSES.get(at.type)),
+                "NSEntity": w.ref(f"ent:{e.name}"),
+                "NSValueTransformerName": at.transformer,
+                "NSPropertyName": at.name,
+                "NSFlagsKey": 4 if at.external else 0,
+                "NSRenamingIdentifier": at.renaming,
+                **({"NSIsOptional": True} if at.optional else {}),
+                **({"NSIsTransient": True} if at.transient else {}),
+            })
+        for r in e.rels:
+            key = prop_body_key(e.name, r.name)
+            node_kinds[key] = "rel"
+            inv = find_inverse(model, r)
+            w.declare(key, {
+                "_P": 241 + (2 if r.optional else 0) + (1024 if r.ordered else 0),
+                "NSDestinationEntity": w.ref(f"ent:{r.dest}"),
+                "NSEntity": w.ref(f"ent:{e.name}"),
+                "NSDeleteRule": r.delete_rule,
+                "NSInverseRelationship": (w.ref(prop_body_key(r.inverse_entity, r.inverse_name))
+                                          if inv else None),
+                "_NSInverseRelationshipName": r.inverse_name,
+                "NSMaxCount": r.max_count,
+                "NSMinCount": r.min_count,
+                "NSPropertyName": r.name,
+                "NSRenamingIdentifier": r.renaming,
+                "_NSDestinationEntityName": r.dest,
+                **({"NSIsOptional": True} if r.optional else {}),
+                **({"NSIsOrdered": True} if r.ordered else {}),
+            })
+
+    # fetch index objects
+    for e in model.entities:
+        for ix in e.indexes:
+            for j, (pname, asc) in enumerate(ix.elements):
+                key = f"idxel:{e.name}:{ix.name}:{j}"
+                node_kinds[key] = "indexel"
+                w.declare(key, {
+                    "NSPropertyName": pname,
+                    "NSFetchIndexElementType": 0,
+                    "NSFetchIndexDescription": w.ref(f"idx:{e.name}:{ix.name}"),
+                    "NSAscending": asc,
+                })
+            key = f"idx:{e.name}:{ix.name}"
+            node_kinds[key] = "index"
+            w.declare(key, {
+                "NSIndexName": ix.name,
+                "NSPartialIndexPredicate": None,
+                "NSIndexElements": Arr([w.ref(f"idxel:{e.name}:{ix.name}:{j}")
+                                        for j in range(len(ix.elements))], mutable=False),
+                "NSEntity": w.ref(f"ent:{e.name}"),
+            })
+
+    # entities
+    for e in model.entities:
+        key = f"ent:{e.name}"
+        node_kinds[key] = "entity"
+        body = {
+            "NSEntityName": e.name,
+            "NSClassNameForEntity": class_name(e),
+            "NSUserInfo": Dict(dict(e.user_info), mutable=bool(e.user_info)),
+            "NSSubentities": Dict({s.name: w.ref(f"ent:{s.name}")
+                                   for s in model.entities if s.parent == e.name}),
+            "NSVersionHashModifier": e.hash_modifier,
+            "NSProperties": Dict(
+                {p_name(at_or_rel): w.ref(prop_body_key(e.name, p_name(at_or_rel)))
+                 for at_or_rel in [*e.attrs, *e.rels]}),
+            "NSRenamingIdentifier": e.renaming,
+            "NSManagedObjectModel": w.ref("model"),
+            "NSSuperentity": None if not e.parent else w.ref(f"ent:{e.parent}"),
+        }
+        if e.abstract:
+            body["NSIsAbstract"] = True
+        if e.unique_tuples:
+            body["NSUniqueTuples"] = Arr(
+                [Arr([p for p in tup]) for tup in e.unique_tuples])
+        if e.indexes:
+            body["NSFetchIndexDescriptions"] = Arr(
+                [w.ref(f"idx:{e.name}:{ix.name}") for ix in e.indexes])
+            multi = [ix for ix in e.indexes if len(ix.elements) > 1]
+            body["NSCompoundIndexes"] = Arr(
+                [Arr([p for p, _ in ix.elements]) for ix in multi])
+        w.declare(key, body)
+
+    # fetch request templates
+    for fr in model.fetch_requests:
+        key = f"fr:{fr.name}"
+        node_kinds[key] = "fetchrequest"
+        w.declare(key, {
+            "NSSortDescriptors": None,
+            "NSValuesToFetch": None,
+            "NSPredicate": parse_predicate(fr.predicate),
+            "NSEntity": w.ref(f"ent:{fr.entity}"),
+            "NSHasFetchRequestFlags": True,
+            "NSFetchRequestFlags": 30,
+            "NSResultType": 0,
+            "NSValuesToGroupBy": None,
+            "NSHavingPredicate": None,
+            "NSFetchOffset": 0,
+            "NSFetchLimit": 0,
+            "NSBatchSize": 0,
+            "NSRelationshipKeyPathsForPrefetching": None,
+            "NSAllocationType": 0,
+        })
+
+    # model
+    node_kinds["model"] = "model"
+    model_body = {
+        "NSEntities": Dict({e.name: w.ref(f"ent:{e.name}") for e in model.entities}),
+        "CDMCompilerToolVersion": COMPILER_TOOL_VERSION,
+        "CDMCompilerXcodeVersion": COMPILER_XCODE_VERSION,
+        "NSFetchRequestTemplates": (Dict({fr.name: w.ref(f"fr:{fr.name}")})
+                                     if model.fetch_requests else None),
+        "NSVersionIdentifiers": SetArr([model.identifier]),
+    }
+    if model.configurations:
+        model_body["NSConfigurations"] = Dict(
+            {name: SetArr([w.ref(f"ent:{m}") for m in members])
+             for name, members in model.configurations})
+    w.declare("model", model_body)
+    return w.dump("model")
+
+
+def p_name(at_or_rel):
+    return at_or_rel.name
+
+
+def find_inverse(model, rel):
+    for e in model.entities:
+        if e.name != rel.inverse_entity:
+            continue
+        for r2 in e.rels:
+            if r2.name == rel.inverse_name:
+                return r2
+    return None
+
+
+def default_value(at):
+    if at.default is None:
+        return None
+    kind, v = at.default
+    if kind == "date":
+        return Node("date", **{"NS.time": v})
+    if kind == "decimal":
+        neg = v.startswith("-")
+        s = v.lstrip("+-")
+        whole, _, frac = s.partition(".")
+        frac = frac.rstrip("0")
+        mant = int((whole or "0") + frac) if (whole + frac) else 0
+        return Node("decimal", **{"NS.mantissa": mant.to_bytes(16, "little"),
+                                  "NS.negative": neg, "NS.exponent": -len(frac),
+                                  "NS.length": max(1, (mant.bit_length() + 15) // 16),
+                                  "NS.compact": True, "NS.mantissa.bo": 1})
+    return Box(v)  # NSNumber/NSString defaults go through encodeObject, like momc
+
+
+# ------------------------------------------------------------ predicate parsing
+# Serializes the predicate-string subset the Xcode model editor writes into the exact
+# NSKeyedArchiver shapes Apple's momc emits (captured from Xcode 27.0).
+
+TOKEN = re.compile(r"""\s*(?:(?P<str>'(?:[^'\\]|\\.)*')|(?P<var>\$[A-Za-z_]\w*)|
+(?P<num>-?\d+(?:\.\d+)?)|(?P<op><=|>=|!=|==|<|>)|(?P<word>[A-Za-z_][A-Za-z0-9_]*)|
+(?P<lp>\()|(?P<rp>\)))""", re.VERBOSE)
+
+CMP_OPS = {
+    "==": ("eqop", {"NSModifier": 0, "NSNegate": False, "NSOptions": 0, "NSOperatorType": 4}),
+    "!=": ("eqop", {"NSModifier": 0, "NSNegate": True, "NSOptions": 0, "NSOperatorType": 5}),
+    "<": ("cmpop", {"NSModifier": 0, "NSVariant": 0, "NSOptions": 0, "NSOperatorType": 0}),
+    "<=": ("cmpop", {"NSModifier": 0, "NSVariant": 1, "NSOptions": 0, "NSOperatorType": 1}),
+    ">": ("cmpop", {"NSModifier": 0, "NSVariant": 2, "NSOptions": 0, "NSOperatorType": 2}),
+    ">=": ("cmpop", {"NSModifier": 0, "NSVariant": 3, "NSOptions": 0, "NSOperatorType": 3}),
+    "LIKE": ("likeop", {"NSModifier": 0, "NSFlags": 0, "NSOperatorType": 7}),
+    "MATCHES": ("matchop", {"NSModifier": 0, "NSFlags": 0, "NSOperatorType": 6}),
+    "BEGINSWITH": ("subop", {"NSModifier": 0, "NSFlags": 0, "NSPosition": 0, "NSOperatorType": 8}),
+    "ENDSWITH": ("subop", {"NSModifier": 0, "NSFlags": 0, "NSPosition": 1, "NSOperatorType": 9}),
+    "CONTAINS": ("inop", {"NSModifier": 0, "NSFlags": 0, "NSOperatorType": 99}),
+    "IN": ("inop", {"NSModifier": 0, "NSFlags": 0, "NSOperatorType": 10}),
+    "BETWEEN": ("betweenop", {"NSModifier": 0, "NSOperatorType": 100}),
+}
+
+
+def parse_predicate(text):
+    if not text:
+        return None
+    toks = []
+    pos = 0
+    while pos < len(text):
+        m = TOKEN.match(text, pos)
+        if not m:
+            if text[pos:].strip():
+                die(f"unsupported predicate syntax near {text[pos:pos+20]!r}")
+            break
+        pos = m.end()
+        toks.append((m.lastgroup, m.group(m.lastgroup)))
+    node, rest = _parse_or(toks, 0)
+    if rest != len(toks):
+        die(f"unsupported predicate: {text!r}")
+    return node
+
+
+def _parse_or(toks, i):
+    node, i = _parse_and(toks, i)
+    parts = [node]
+    while i < len(toks) and toks[i] == ("word", "OR"):
+        n2, i = _parse_and(toks, i + 1)
+        parts.append(n2)
+    if len(parts) == 1:
+        return parts[0], i
+    return Node("compoundpred", NSCompoundPredicateType=2,
+                NSSubpredicates=Arr(parts, mutable=False)), i
+
+
+def _parse_and(toks, i):
+    node, i = _parse_not(toks, i)
+    parts = [node]
+    while i < len(toks) and toks[i] == ("word", "AND"):
+        n2, i = _parse_not(toks, i + 1)
+        parts.append(n2)
+    if len(parts) == 1:
+        return parts[0], i
+    return Node("compoundpred", NSCompoundPredicateType=1,
+                NSSubpredicates=Arr(parts, mutable=False)), i
+
+
+def _parse_not(toks, i):
+    if toks[i] == ("word", "NOT"):
+        inner, i = _parse_atom(toks, i + 1)
+        return Node("compoundpred", NSCompoundPredicateType=0,
+                    NSSubpredicates=Arr([inner], mutable=False)), i
+    return _parse_atom(toks, i)
+
+
+def _parse_atom(toks, i):
+    if toks[i][0] == "lp":
+        node, i = _parse_or(toks, i + 1)
+        if toks[i][0] != "rp":
+            die("missing ) in predicate")
+        return node, i + 1
+    kind, val = toks[i]
+    if kind != "word":
+        die(f"expected key path, got {val!r}")
+    if i + 1 >= len(toks) or toks[i + 1][0] != "op":
+        die(f"expected comparison operator after {val!r}")
+    op = toks[i + 1][1]
+    rkind, rval = toks[i + 2]
+    lhs = Node("keypath", NSOperand=Node("self", NSExpressionType=1),
+               NSSelectorName="valueForKey:", NSExpressionType=3,
+               NSArguments=Arr([Node("keyspec", NSExpressionType=10, NSKeyPath=val)]))
+    if rkind == "var":
+        rhs = Node("variable", NSVariable=rval[1:], NSExpressionType=2)
+    else:
+        rhs = _const(rval, rkind)
+    clsname, fields = CMP_OPS[op]
+    return Node("comp", NSLeftExpression=lhs, NSRightExpression=rhs,
+                NSPredicateOperator=Node(clsname, **fields)), i + 3
+
+
+def _const(val, kind):
+    if kind == "str":
+        return Node("constant", NSConstantValue=re.sub(r"\\(.)", r"\1", val[1:-1]),
+                    NSExpressionType=0)
+    if kind == "num":
+        return Node("constant", NSConstantValue=(float(val) if "." in val else int(val)),
+                    NSExpressionType=0)
+    if val in ("YES", "true", "TRUE"):
+        return Node("constant", NSConstantValue=True, NSExpressionType=0)
+    if val in ("NO", "false", "FALSE"):
+        return Node("constant", NSConstantValue=False, NSExpressionType=0)
+    if val in ("NIL", "nil", "NULL", "null"):
+        return Node("constant", NSConstantValue=None, NSConstantValueClassName=None,
+                    NSExpressionType=0)
+    die(f"unsupported predicate constant {val!r}")
+
+
+# ------------------------------------------- version hashes and plist bookkeeping
+# NSEntityDescription.versionHash is recomputed by Core Data at load time from the model
+# description, so models that decode identically hash identically at runtime. The copies in
+# VersionInfo.plist are computed the same way from the same inputs.
+
+def plist_hashes(model):
+    return {e.name: entity_version_hash(model, e) for e in model.entities}
+
+
+def entity_version_hash(model, ent):
+    ents = {e.name: e for e in model.entities}
+
+    def h(s):
+        b = hashlib.sha256(s.encode()).digest()
+        return b
+
+    parts = [ent.name, ent.class_name, "1" if ent.abstract else "0",
+             ent.hash_modifier or "", ent.renaming]
+    for s in sorted(x.name for x in ents.values() if x.parent == ent.name):
+        parts.append(f"subentity:{s}:{entity_version_hash(model, ents[s]).hex()}")
+    for p in [*ent.attrs, *ent.rels]:
+        if isinstance(p, Attr):
+            parts.append(f"attr:{p.name}:{p.type}:{int(p.optional)}:{int(p.transient)}:"
+                         f"{int(p.external)}:{repr(p.default)}:{p.transformer or ''}:"
+                         f"{p.custom_class or ''}")
+        else:
+            parts.append(f"rel:{p.name}:{p.dest}:{p.inverse_entity}.{p.inverse_name or ''}:"
+                         f"{int(p.to_many)}:{int(p.ordered)}:{p.min_count}:{p.max_count}:"
+                         f"{p.delete_rule}:{int(p.optional)}")
+    for tup in ent.unique_tuples:
+        parts.append("unique:" + ",".join(tup))
+    return h("\n".join(parts))
+
+
+def model_checksum(model):
+    payload = model.name + "\n" + model.identifier + "\n" + "\n".join(
+        f"{e.name}:{entity_version_hash(model, e).hex()}" for e in model.entities)
+    return base64.b64encode(hashlib.sha256(payload.encode()).digest()).decode()
+
+
+# ------------------------------------------------------------------ diagnostics
+
+def model_warnings(opts, model):
+    vd = str(model.dir)
+    for e in model.entities:
+        for at in e.attrs:
+            if at.type == 1800 and not at.transformer:
+                warn(opts, vd, f"{e.name}.{at.name}",
+                     f"{e.name}.{at.name} is using a nil or insecure value transformer. Please "
+                     "switch to NSSecureUnarchiveFromDataTransformerName or a custom "
+                     "NSValueTransformer subclass of NSSecureUnarchiveFromDataTransformer")
+        for r in e.rels:
+            if not r.inverse_name:
+                warn(opts, vd, f"{e.name}.{r.name}",
+                     f"{e.name}.{r.name} should have an inverse")
+
+
+_WARNED = set()
+
+
+def warn(opts, path, prop, msg):
+    if opts["no_warnings"] or msg in _WARNED:
+        return  # momc emits each distinct warning once per compile
+    _WARNED.add(msg)
+    print(f"{path}:{prop}: warning: {msg} [2]", file=sys.stderr)
+
+
+# ---------------------------------------------------------------------- compile
+
+def compile_mode(opts):
+    src, dest = opts["input"], opts["dest"]
+    name, models, cur = load_input(src)
+    if not os.path.isdir(dest):
+        print(f"{src}: error: Could not create bundle folder at "
+              f"'{os.path.abspath(os.path.join(dest, name + '.momd'))}' "
+              f"(Error Domain=NSCocoaErrorDomain Code=4 "
+              f"The file \u201c{name}.momd\u201d doesn\u2019t exist.) [0]", file=sys.stderr)
+        sys.exit(1)
+    outdir = Path(dest) / f"{name}.momd"
+    outdir.mkdir(exist_ok=True)
+    hashes, sums = {}, {}
+    for m in models:
+        (outdir / f"{m.name}.mom").write_bytes(build_mom_data(m, opts))
+        hashes[m.name] = plist_hashes(m)
+        sums[m.name] = model_checksum(m)
+        print(f"{src}: note: Model {m.name} version checksum: {sums[m.name]}", file=sys.stderr)
+        model_warnings(opts, m)
+    version_info = {
+        "NSManagedObjectModel_VersionChecksums": sums,
+        "NSManagedObjectModel_VersionHashes": hashes,
+        "NSManagedObjectModel_CurrentVersionName": cur,
+    }
+    with open(outdir / "VersionInfo.plist", "wb") as f:
+        plistlib.dump(version_info, f, fmt=plistlib.FMT_BINARY)
+
+
+# ----------------------------------------------------------------------- codegen
+
+def swift_attr_type(at):
+    t = at.type
+    if t == 700:
+        return "String?"
+    if t == 800:
+        return "Bool" if at.scalar else "NSNumber?"
+    if t in (100, 200, 300):
+        names = {100: "Int16", 200: "Int32", 300: "Int64"}
+        return names[t] if at.scalar else "NSNumber?"
+    if t == 600:
+        return "Float" if at.scalar else "NSNumber?"
+    if t == 500:
+        return "Double" if at.scalar else "NSNumber?"
+    if t == 400:
+        return "NSDecimalNumber?"
+    if t == 900:
+        return "TimeInterval" if at.scalar else "Date?"
+    if t == 1000:
+        return "Data?"
+    if t == 1100:
+        return "UUID?"
+    if t == 1200:
+        return "URL?"
+    if t == 1800:
+        return f"{at.custom_class or 'NSObject'}?"
+    die(f"unsupported attribute type for codegen: {at.type_name}")
+
+
+def short_class(ent):
+    return ent.class_name.rsplit(".", 1)[-1]
+
+
+def header(fname):
+    today = datetime.now().strftime("%-m/%-d/%y")
+    return (f"//\n//  {fname}\n//  \n//\n//  Created by {FULL_NAME} on {today}.\n//\n"
+            "//  This file was automatically generated and should not be edited.\n//\n\n")
+
+
+def properties_file(model, ent, ents_by_name, base_name):
+    n = short_class(ent)
+    out = [f"public import Foundation\npublic import CoreData\n\n\n"
+           f"public typealias {n}CoreDataPropertiesSet = NSSet\n\n"
+           f"extension {n} {{\n\n"
+           f"    @nonobjc public class func fetchRequest() -> NSFetchRequest<{n}> {{\n"
+           f"        return NSFetchRequest<{n}>(entityName: \"{ent.name}\")\n"
+           f"    }}\n"]
+    decls = [f"    @NSManaged nonisolated public var {at.name}: {swift_attr_type(at)}"
+             for at in ent.attrs]
+    for r in ent.rels:
+        dn = short_class(ents_by_name[r.dest])
+        t = ("NSOrderedSet?" if r.ordered else "NSSet?") if r.to_many else f"{dn}?"
+        decls.append(f"    @NSManaged nonisolated public var {r.name}: {t}")
+    if decls:
+        out.append("\n" + "\n".join(decls) + "\n")
+    has_accessors = any(r.to_many for r in ent.rels)
+    out.append("}\n" if has_accessors else "\n}\n")
+    for r in [r for r in ent.rels if r.to_many]:
+        name = r.name
+        cap = name[0].upper() + name[1:]
+        dn = short_class(ents_by_name[r.dest])
+        out.append(f"// MARK: Generated accessors for {name}\n")
+        out.append(f"extension {n} {{\n")
+        if r.ordered:
+            out.append(
+                f"    @objc(insertObject:in{cap}AtIndex:)\n"
+                f"    @NSManaged nonisolated public func insertInto{cap}(_ value: {dn}, at idx: Int)\n"
+                f"    @objc(removeObjectFrom{cap}AtIndex:)\n"
+                f"    @NSManaged nonisolated public func removeFrom{cap}(at idx: Int)\n"
+                f"    @objc(insert{cap}:atIndexes:)\n"
+                f"    @NSManaged nonisolated public func insertInto{cap}(_ values: [{dn}], at indexes: NSIndexSet)\n"
+                f"    @objc(remove{cap}AtIndexes:)\n"
+                f"    @NSManaged nonisolated public func removeFrom{cap}(at indexes: NSIndexSet)\n"
+                f"    @objc(replaceObjectIn{cap}AtIndex:withObject:)\n"
+                f"    @NSManaged nonisolated public func replace{cap}(at idx: Int, with value: {dn})\n"
+                f"    @objc(replace{cap}AtIndexes:with{cap}:)\n"
+                f"    @NSManaged nonisolated public func replace{cap}(at indexes: NSIndexSet, with values: [{dn}])\n"
+                f"    @objc(add{cap}Object:)\n"
+                f"    @NSManaged nonisolated public func addTo{cap}(_ value: {dn})\n"
+                f"    @objc(remove{cap}Object:)\n"
+                f"    @NSManaged nonisolated public func removeFrom{cap}(_ value: {dn})\n"
+                f"    @objc(add{cap}:)\n"
+                f"    @NSManaged nonisolated public func addTo{cap}(_ values: NSOrderedSet)\n"
+                f"    @objc(remove{cap}:)\n"
+                f"    @NSManaged nonisolated public func removeFrom{cap}(_ values: NSOrderedSet)\n")
+        else:
+            out.append(
+                f"    @objc(add{cap}Object:)\n"
+                f"    @NSManaged nonisolated public func addTo{cap}(_ value: {dn})\n"
+                f"    @objc(remove{cap}Object:)\n"
+                f"    @NSManaged nonisolated public func removeFrom{cap}(_ value: {dn})\n"
+                f"    @objc(add{cap}:)\n"
+                f"    @NSManaged nonisolated public func addTo{cap}(_ values: NSSet)\n"
+                f"    @objc(remove{cap}:)\n"
+                f"    @NSManaged nonisolated public func removeFrom{cap}(_ values: NSSet)\n")
+        out.append("}\n")
+    return header(f"{ent.name}+CoreDataProperties.swift") + "".join(out)
+
+
+def class_file(ent, ents_by_name):
+    n = short_class(ent)
+    sup = short_class(ents_by_name[ent.parent]) if ent.parent else "NSManagedObject"
+    return (header(f"{ent.name}+CoreDataClass.swift") +
+            f"public import Foundation\npublic import CoreData\n\n"
+            f"public typealias {n}CoreDataClassSet = NSSet\n\n"
+            f"@objc({n})\npublic class {n}: {sup} {{\n\n}}\n")
+
+
+def model_file(base_name):
+    return (header(f"{base_name}+CoreDataModel.swift") +
+            f"public import Foundation\npublic import CoreData\n\n"
+            f"public typealias {base_name}FoundationFrameworkSet = NSSet\n"
+            f"public typealias {base_name}CoreDataFrameworkManagedObject = NSManagedObject\n\n\n")
+
+
+def codegen_files(model, ents_by_name, base_name):
+    out = []
+    for e in model.entities:
+        if e.codegen == "class":
+            out.append((f"{e.name}+CoreDataClass.swift", class_file(e, ents_by_name)))
+            out.append((f"{e.name}+CoreDataProperties.swift",
+                        properties_file(model, e, ents_by_name, base_name)))
+        elif e.codegen == "category":
+            out.append((f"{e.name}+CoreDataProperties.swift",
+                        properties_file(model, e, ents_by_name, base_name)))
+    if out:
+        out.append((f"{base_name}+CoreDataModel.swift", model_file(base_name)))
+    return out
+
+
+def codegen_mode(opts):
+    src, dest = opts["input"], opts["dest"]
+    name, models, cur = load_input(src)
+    model = next(m for m in models if m.name == cur)
+    ents_by_name = {e.name: e for e in model.entities}
+    files = codegen_files(model, ents_by_name, name)
+    if opts["dry_run"]:
+        for fname, _ in files:
+            print(os.path.abspath(os.path.join(dest, fname)))
+        return
+    if files and not opts["swift_version"]:
+        die("Swift code generation requires --swift-version (ObjC code generation is not "
+            "supported by the Linux momc)")
+    os.makedirs(dest, exist_ok=True)
+    for fname, content in files:
+        (Path(dest) / fname).write_text(content)
+
+
+# -------------------------------------------------------------------- self-test
+
+def self_test():
+    tmp = Path(tempfile.mkdtemp(prefix="momc-selftest."))
+    try:
+        d = tmp / "T.xcdatamodeld" / "T 2.xcdatamodel"
+        d.mkdir(parents=True)
+        (d / "contents").write_text(
+            """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="22757" systemVersion="23C71" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="E" representedClassName="E" syncable="YES" codeGenerationType="class">
+        <attribute name="s" optional="YES" attributeType="String"/>
+        <attribute name="n" attributeType="Integer 64" defaultValueString="7" usesScalarValueType="YES"/>
+        <attribute name="when" attributeType="Date" defaultDateTimeInterval="631123200" usesScalarValueType="NO"/>
+        <attribute name="blob" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
+        <attribute name="tf" optional="YES" attributeType="Transformable" customClassName="NSData" valueTransformerName="X"/>
+        <relationship name="kids" toMany="YES" deletionRule="Cascade" destinationEntity="K" inverseName="parent" inverseEntity="K" ordered="YES"/>
+        <uniquenessConstraints><uniquenessConstraint><constraint value="s"/></uniquenessConstraint></uniquenessConstraints>
+        <fetchIndex name="byS"><fetchIndexElement property="s" type="Binary" order="ascending"/></fetchIndex>
+    </entity>
+    <entity name="K" representedClassName="K" syncable="YES" parentEntity="E" codeGenerationType="category">
+        <relationship name="parent" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="E" inverseName="kids" inverseEntity="E"/>
+    </entity>
+    <configuration name="C1"><memberEntity name="E"/></configuration>
+    <fetchRequest name="q" entity="E" predicateString="s == $S AND n > 1"/>
+</model>
+""")
+        (tmp / "T.xcdatamodeld" / ".xccurrentversion").write_bytes(plistlib.dumps(
+            {"_XCCurrentVersionName": "T 2.xcdatamodel"}))
+        out = tmp / "out"
+        out.mkdir()
+        base = {"input": str(tmp / "T.xcdatamodeld"), "module": "M", "swift_version": "5",
+                "no_warnings": False, "sdkroot": "", "deployment_target": ""}
+        compile_mode(dict(base, dest=str(out), action="compile", dry_run=False))
+        momd = out / "T.momd"
+        assert (momd / "T 2.mom").exists() and (momd / "VersionInfo.plist").exists()
+        arch = plistlib.load(open(momd / "T 2.mom", "rb"))
+        objs = arch["$objects"]
+        assert arch["$archiver"] == "NSKeyedArchiver"
+        root = arch["$objects"][arch["$top"]["root"].data]
+        assert objs[root["$class"].data]["$classname"] == "NSManagedObjectModel"
+        classes = {objs[o["$class"].data]["$classname"] for o in objs
+                   if isinstance(o, dict) and "$class" in o}
+        for c in ("NSEntityDescription", "NSFetchRequest", "NSFetchIndexDescription",
+                  "NSCompoundPredicate", "NSComparisonPredicate",
+                  "NSComparisonPredicateOperator", "NSEqualityPredicateOperator"):
+            assert c in classes, (c, classes)
+        vi = plistlib.load(open(momd / "VersionInfo.plist", "rb"))
+        assert vi["NSManagedObjectModel_CurrentVersionName"] == "T 2"
+        assert set(vi["NSManagedObjectModel_VersionHashes"]["T 2"]) == {"E", "K"}
+        assert len(vi["NSManagedObjectModel_VersionHashes"]["T 2"]["E"]) == 32
+        # the model node carries the same key set momc writes
+        mnode = root
+        assert objs[mnode["$class"].data]["$classname"] == "NSManagedObjectModel"
+        assert set(mnode) == {"NSEntities", "CDMCompilerToolVersion",
+                              "CDMCompilerXcodeVersion", "NSFetchRequestTemplates",
+                              "NSVersionIdentifiers", "NSConfigurations", "$class"}
+        # codegen: dry-run list then files
+        g = tmp / "gen" / "T"
+        import io
+        import contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            codegen_mode(dict(base, dest=str(g), action="generate", dry_run=True))
+        listed = sorted(buf.getvalue().splitlines())
+        assert listed == [os.path.abspath(g / "E+CoreDataClass.swift"),
+                          os.path.abspath(g / "E+CoreDataProperties.swift"),
+                          os.path.abspath(g / "K+CoreDataProperties.swift"),
+                          os.path.abspath(g / "T+CoreDataModel.swift")], listed
+        codegen_mode(dict(base, dest=str(g), action="generate", dry_run=False))
+        text = (g / "E+CoreDataProperties.swift").read_text()
+        assert "@objc(insertObject:inKidsAtIndex:)" in text
+        assert 'entityName: "E"' in text and "var kids: NSOrderedSet?" in text
+        cls = (g / "E+CoreDataClass.swift").read_text()
+        assert "@objc(E)\npublic class E: NSManagedObject {\n\n}" in cls
+        kcat = (g / "K+CoreDataProperties.swift").read_text()
+        assert "public class K" not in kcat and "var parent: E?" in kcat
+        print("self-test ok")
+    finally:
+        shutil.rmtree(tmp)
+
+
+if __name__ == "__main__":
+    argv = sys.argv[1:]
+    if argv[:1] == ["--self-test"]:
+        self_test()
+        sys.exit(0)
+    opts = parse_args(argv)
+    (compile_mode if opts["action"] == "compile" else codegen_mode)(opts)

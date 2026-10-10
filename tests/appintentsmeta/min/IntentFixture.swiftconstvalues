@@ -1,0 +1,183 @@
+[
+  {
+    "typeName": "IntentFixture.PingIntent",
+    "mangledTypeName": "13IntentFixture04PingA0V",
+    "kind": "struct",
+    "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/min-1086615-1/src/IntentFixture.swift",
+    "line": 4,
+    "conformances": [
+      "AppIntents.AppIntent",
+      "AppIntents.PersistentlyIdentifiable",
+      "AppIntents._SupportsAppDependencies",
+      "Swift.Sendable",
+      "Swift.SendableMetatype",
+      "Swift.BitwiseCopyable"
+    ],
+    "allConformances": [
+      {
+        "protocolName": "AppIntents.AppIntent",
+        "conformanceDefiningModule": "IntentFixture"
+      },
+      {
+        "protocolName": "AppIntents.PersistentlyIdentifiable",
+        "conformanceDefiningModule": "IntentFixture"
+      },
+      {
+        "protocolName": "AppIntents._SupportsAppDependencies",
+        "conformanceDefiningModule": "IntentFixture"
+      },
+      {
+        "protocolName": "Swift.Sendable",
+        "conformanceDefiningModule": "IntentFixture"
+      },
+      {
+        "protocolName": "Swift.SendableMetatype",
+        "conformanceDefiningModule": "IntentFixture"
+      },
+      {
+        "protocolName": "Swift.BitwiseCopyable",
+        "conformanceDefiningModule": "IntentFixture"
+      }
+    ],
+    "associatedTypeAliases": [
+      {
+        "typeAliasName": "PerformResult",
+        "substitutedTypeName": "some AppIntents.IntentResult",
+        "substitutedMangledTypeName": "13IntentFixture04PingA0V7performQryYaKFQOy_Qo_",
+        "opaqueTypeProtocolRequirements": [
+          "AppIntents.IntentResult"
+        ],
+        "opaqueTypeSameTypeRequirements": []
+      },
+      {
+        "typeAliasName": "SummaryContent",
+        "substitutedTypeName": "some AppIntents.ParameterSummary",
+        "substitutedMangledTypeName": "10AppIntents0A6IntentPAAE16parameterSummaryQrvpZQOy0C7Fixture04PingC0V_Qo_",
+        "opaqueTypeProtocolRequirements": [
+          "AppIntents.ParameterSummary"
+        ],
+        "opaqueTypeSameTypeRequirements": []
+      }
+    ],
+    "properties": [
+      {
+        "label": "title",
+        "type": "Foundation.LocalizedStringResource",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "false",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/min-1086615-1/src/IntentFixture.swift",
+        "line": 5,
+        "valueKind": "RawLiteral",
+        "value": "Ping"
+      }
+    ]
+  },
+  {
+    "typeName": "IntentFixture.PingShortcuts",
+    "mangledTypeName": "13IntentFixture13PingShortcutsV",
+    "kind": "struct",
+    "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/min-1086615-1/src/IntentFixture.swift",
+    "line": 9,
+    "conformances": [
+      "AppIntents.AppShortcutsProvider",
+      "Swift.Sendable",
+      "Swift.SendableMetatype",
+      "Swift.BitwiseCopyable"
+    ],
+    "allConformances": [
+      {
+        "protocolName": "AppIntents.AppShortcutsProvider",
+        "conformanceDefiningModule": "IntentFixture"
+      },
+      {
+        "protocolName": "Swift.Sendable",
+        "conformanceDefiningModule": "IntentFixture"
+      },
+      {
+        "protocolName": "Swift.SendableMetatype",
+        "conformanceDefiningModule": "IntentFixture"
+      },
+      {
+        "protocolName": "Swift.BitwiseCopyable",
+        "conformanceDefiningModule": "IntentFixture"
+      }
+    ],
+    "associatedTypeAliases": [],
+    "properties": [
+      {
+        "label": "appShortcuts",
+        "type": "Swift.Array<AppIntents.AppShortcut>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "true",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/min-1086615-1/src/IntentFixture.swift",
+        "line": 10,
+        "valueKind": "Builder",
+        "value": {
+          "type": "AppIntents.AppShortcutsBuilder",
+          "members": [
+            {
+              "kind": "buildExpression",
+              "element": {
+                "valueKind": "InitCall",
+                "value": {
+                  "type": "AppIntents.AppShortcut",
+                  "arguments": [
+                    {
+                      "label": "intent",
+                      "type": "IntentFixture.PingIntent",
+                      "valueKind": "InitCall",
+                      "value": {
+                        "type": "IntentFixture.PingIntent",
+                        "arguments": []
+                      }
+                    },
+                    {
+                      "label": "phrases",
+                      "type": "Swift.Array<AppIntents.AppShortcutPhrase<IntentFixture.PingIntent>>",
+                      "valueKind": "Array",
+                      "value": [
+                        {
+                          "valueKind": "InterpolatedStringLiteral",
+                          "value": {
+                            "segments": [
+                              {
+                                "valueKind": "RawLiteral",
+                                "value": "Ping with "
+                              },
+                              {
+                                "valueKind": "Enum",
+                                "value": {
+                                  "name": "applicationName"
+                                }
+                              },
+                              {
+                                "valueKind": "RawLiteral",
+                                "value": ""
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "shortTitle",
+                      "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+                      "valueKind": "NilLiteral"
+                    },
+                    {
+                      "label": "systemImageName",
+                      "type": "Swift.Optional<Swift.String>",
+                      "valueKind": "NilLiteral"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+]

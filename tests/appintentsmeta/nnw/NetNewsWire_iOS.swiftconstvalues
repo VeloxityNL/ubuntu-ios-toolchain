@@ -1,0 +1,859 @@
+[
+  {
+    "typeName": "NetNewsWire_iOS.AddFeedAppIntent",
+    "mangledTypeName": "15NetNewsWire_iOS16AddFeedAppIntentV",
+    "kind": "struct",
+    "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+    "line": 12,
+    "conformances": [
+      "AppIntents.AppIntent",
+      "AppIntents.PersistentlyIdentifiable",
+      "AppIntents._SupportsAppDependencies",
+      "Swift.Sendable",
+      "Swift.SendableMetatype"
+    ],
+    "allConformances": [
+      {
+        "protocolName": "AppIntents.AppIntent",
+        "conformanceDefiningModule": "NetNewsWire_iOS"
+      },
+      {
+        "protocolName": "AppIntents.PersistentlyIdentifiable",
+        "conformanceDefiningModule": "NetNewsWire_iOS"
+      },
+      {
+        "protocolName": "AppIntents._SupportsAppDependencies",
+        "conformanceDefiningModule": "NetNewsWire_iOS"
+      },
+      {
+        "protocolName": "Swift.Sendable",
+        "conformanceDefiningModule": "NetNewsWire_iOS"
+      },
+      {
+        "protocolName": "Swift.SendableMetatype",
+        "conformanceDefiningModule": "NetNewsWire_iOS"
+      }
+    ],
+    "associatedTypeAliases": [
+      {
+        "typeAliasName": "PerformResult",
+        "substitutedTypeName": "some AppIntents.ProvidesDialog",
+        "substitutedMangledTypeName": "15NetNewsWire_iOS16AddFeedAppIntentV7performQryYaKFQOy_Qo_",
+        "opaqueTypeProtocolRequirements": [
+          "AppIntents.ProvidesDialog"
+        ],
+        "opaqueTypeSameTypeRequirements": []
+      },
+      {
+        "typeAliasName": "SummaryContent",
+        "substitutedTypeName": "some AppIntents.ParameterSummary",
+        "substitutedMangledTypeName": "15NetNewsWire_iOS16AddFeedAppIntentV16parameterSummaryQrvpZQOy_Qo_",
+        "opaqueTypeProtocolRequirements": [
+          "AppIntents.ParameterSummary"
+        ],
+        "opaqueTypeSameTypeRequirements": []
+      }
+    ],
+    "properties": [
+      {
+        "label": "_url",
+        "type": "AppIntents.IntentParameter<Foundation.URL>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "false",
+        "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+        "line": 22,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<Foundation.URL>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "URL"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "default",
+              "type": "Swift.Optional<Foundation.URL>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            }
+          ]
+        }
+      },
+      {
+        "label": "_accountName",
+        "type": "AppIntents.IntentParameter<Swift.Optional<Swift.String>>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "false",
+        "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+        "line": 25,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<Swift.Optional<Swift.String>>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "Account"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputOptions",
+              "type": "Swift.Optional<Swift.String.IntentInputOptions>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            },
+            {
+              "label": "optionsProvider",
+              "type": "NetNewsWire_iOS.AccountNameOptionsProvider",
+              "valueKind": "InitCall",
+              "value": {
+                "type": "NetNewsWire_iOS.AccountNameOptionsProvider",
+                "arguments": []
+              }
+            }
+          ]
+        }
+      },
+      {
+        "label": "_folderName",
+        "type": "AppIntents.IntentParameter<Swift.Optional<Swift.String>>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "false",
+        "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+        "line": 28,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<Swift.Optional<Swift.String>>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "Folder"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputOptions",
+              "type": "Swift.Optional<Swift.String.IntentInputOptions>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            },
+            {
+              "label": "optionsProvider",
+              "type": "NetNewsWire_iOS.FolderNameOptionsProvider",
+              "valueKind": "InitCall",
+              "value": {
+                "type": "NetNewsWire_iOS.FolderNameOptionsProvider",
+                "arguments": []
+              }
+            }
+          ]
+        }
+      },
+      {
+        "label": "title",
+        "type": "Foundation.LocalizedStringResource",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "false",
+        "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+        "line": 14,
+        "valueKind": "RawLiteral",
+        "value": "Add Feed"
+      },
+      {
+        "label": "description",
+        "type": "AppIntents.IntentDescription",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "false",
+        "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+        "line": 15,
+        "valueKind": "RawLiteral",
+        "value": "Adds a feed to NetNewsWire."
+      },
+      {
+        "label": "openAppWhenRun",
+        "type": "Swift.Bool",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "false",
+        "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+        "line": 19,
+        "valueKind": "RawLiteral",
+        "value": "false"
+      },
+      {
+        "label": "url",
+        "type": "Foundation.URL",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+        "line": 22,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<Foundation.URL>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "URL"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "default",
+              "type": "Swift.Optional<Foundation.URL>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            }
+          ]
+        },
+        "propertyWrappers": [
+          {
+            "type": "AppIntents.IntentParameter",
+            "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+            "line": 21,
+            "arguments": [
+              {
+                "label": "title",
+                "type": "Foundation.LocalizedStringResource",
+                "valueKind": "RawLiteral",
+                "value": "URL"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "$url",
+        "type": "AppIntents.IntentParameter<Foundation.URL>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+        "line": 22,
+        "valueKind": "Runtime"
+      },
+      {
+        "label": "accountName",
+        "type": "Swift.Optional<Swift.String>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+        "line": 25,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<Swift.Optional<Swift.String>>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "Account"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputOptions",
+              "type": "Swift.Optional<Swift.String.IntentInputOptions>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            },
+            {
+              "label": "optionsProvider",
+              "type": "NetNewsWire_iOS.AccountNameOptionsProvider",
+              "valueKind": "InitCall",
+              "value": {
+                "type": "NetNewsWire_iOS.AccountNameOptionsProvider",
+                "arguments": []
+              }
+            }
+          ]
+        },
+        "propertyWrappers": [
+          {
+            "type": "AppIntents.IntentParameter",
+            "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+            "line": 24,
+            "arguments": [
+              {
+                "label": "title",
+                "type": "Foundation.LocalizedStringResource",
+                "valueKind": "RawLiteral",
+                "value": "Account"
+              },
+              {
+                "label": "optionsProvider",
+                "type": "NetNewsWire_iOS.AccountNameOptionsProvider",
+                "valueKind": "InitCall",
+                "value": {
+                  "type": "NetNewsWire_iOS.AccountNameOptionsProvider",
+                  "arguments": []
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "$accountName",
+        "type": "AppIntents.IntentParameter<Swift.Optional<Swift.String>>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+        "line": 25,
+        "valueKind": "Runtime"
+      },
+      {
+        "label": "folderName",
+        "type": "Swift.Optional<Swift.String>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+        "line": 28,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<Swift.Optional<Swift.String>>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "Folder"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputOptions",
+              "type": "Swift.Optional<Swift.String.IntentInputOptions>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            },
+            {
+              "label": "optionsProvider",
+              "type": "NetNewsWire_iOS.FolderNameOptionsProvider",
+              "valueKind": "InitCall",
+              "value": {
+                "type": "NetNewsWire_iOS.FolderNameOptionsProvider",
+                "arguments": []
+              }
+            }
+          ]
+        },
+        "propertyWrappers": [
+          {
+            "type": "AppIntents.IntentParameter",
+            "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+            "line": 27,
+            "arguments": [
+              {
+                "label": "title",
+                "type": "Foundation.LocalizedStringResource",
+                "valueKind": "RawLiteral",
+                "value": "Folder"
+              },
+              {
+                "label": "optionsProvider",
+                "type": "NetNewsWire_iOS.FolderNameOptionsProvider",
+                "valueKind": "InitCall",
+                "value": {
+                  "type": "NetNewsWire_iOS.FolderNameOptionsProvider",
+                  "arguments": []
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "$folderName",
+        "type": "AppIntents.IntentParameter<Swift.Optional<Swift.String>>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+        "line": 28,
+        "valueKind": "Runtime"
+      },
+      {
+        "label": "parameterSummary",
+        "type": "some AppIntents.ParameterSummary",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "true",
+        "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+        "line": 30,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameterSummary<NetNewsWire_iOS.AddFeedAppIntent>",
+          "arguments": [
+            {
+              "label": "",
+              "type": "AppIntents.ParameterSummaryString<NetNewsWire_iOS.AddFeedAppIntent>",
+              "valueKind": "InterpolatedStringLiteral",
+              "value": {
+                "segments": [
+                  {
+                    "valueKind": "RawLiteral",
+                    "value": "Add "
+                  },
+                  {
+                    "valueKind": "KeyPath",
+                    "value": {
+                      "path": "$url",
+                      "rootType": "NetNewsWire_iOS.AddFeedAppIntent",
+                      "components": [
+                        {
+                          "label": "$url",
+                          "type": "AppIntents.IntentParameter<Foundation.URL>"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "valueKind": "RawLiteral",
+                    "value": " to "
+                  },
+                  {
+                    "valueKind": "KeyPath",
+                    "value": {
+                      "path": "$accountName",
+                      "rootType": "NetNewsWire_iOS.AddFeedAppIntent",
+                      "components": [
+                        {
+                          "label": "$accountName",
+                          "type": "AppIntents.IntentParameter<Swift.Optional<Swift.String>>"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "valueKind": "RawLiteral",
+                    "value": ""
+                  }
+                ]
+              }
+            },
+            {
+              "label": "table",
+              "type": "Swift.Optional<Swift.String>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "",
+              "type": "() -> Swift.Array<Swift.PartialKeyPath<NetNewsWire_iOS.AddFeedAppIntent>>",
+              "valueKind": "Builder",
+              "value": {
+                "type": "",
+                "members": [
+                  {
+                    "kind": "buildExpression",
+                    "element": {
+                      "valueKind": "KeyPath",
+                      "value": {
+                        "path": "$folderName",
+                        "rootType": "NetNewsWire_iOS.AddFeedAppIntent",
+                        "components": [
+                          {
+                            "label": "$folderName",
+                            "type": "AppIntents.IntentParameter<Swift.Optional<Swift.String>>"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "typeName": "NetNewsWire_iOS.AccountNameOptionsProvider",
+    "mangledTypeName": "15NetNewsWire_iOS26AccountNameOptionsProviderV",
+    "kind": "struct",
+    "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+    "line": 90,
+    "conformances": [
+      "AppIntents.DynamicOptionsProvider",
+      "AppIntents._SupportsAppDependencies",
+      "Swift.Sendable",
+      "Swift.BitwiseCopyable"
+    ],
+    "allConformances": [
+      {
+        "protocolName": "AppIntents.DynamicOptionsProvider",
+        "conformanceDefiningModule": "NetNewsWire_iOS"
+      },
+      {
+        "protocolName": "AppIntents._SupportsAppDependencies",
+        "conformanceDefiningModule": "NetNewsWire_iOS"
+      },
+      {
+        "protocolName": "Swift.Sendable",
+        "conformanceDefiningModule": "NetNewsWire_iOS"
+      },
+      {
+        "protocolName": "Swift.BitwiseCopyable",
+        "conformanceDefiningModule": "NetNewsWire_iOS"
+      }
+    ],
+    "associatedTypeAliases": [
+      {
+        "typeAliasName": "Result",
+        "substitutedTypeName": "Swift.Array<Swift.String>",
+        "substitutedMangledTypeName": "SaySSG"
+      },
+      {
+        "typeAliasName": "DefaultValue",
+        "substitutedTypeName": "Swift.String",
+        "substitutedMangledTypeName": "SS"
+      }
+    ],
+    "properties": []
+  },
+  {
+    "typeName": "NetNewsWire_iOS.FolderNameOptionsProvider",
+    "mangledTypeName": "15NetNewsWire_iOS25FolderNameOptionsProviderV",
+    "kind": "struct",
+    "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+    "line": 99,
+    "conformances": [
+      "AppIntents.DynamicOptionsProvider",
+      "AppIntents._SupportsAppDependencies",
+      "Swift.Sendable"
+    ],
+    "allConformances": [
+      {
+        "protocolName": "AppIntents.DynamicOptionsProvider",
+        "conformanceDefiningModule": "NetNewsWire_iOS"
+      },
+      {
+        "protocolName": "AppIntents._SupportsAppDependencies",
+        "conformanceDefiningModule": "NetNewsWire_iOS"
+      },
+      {
+        "protocolName": "Swift.Sendable",
+        "conformanceDefiningModule": "NetNewsWire_iOS"
+      }
+    ],
+    "associatedTypeAliases": [
+      {
+        "typeAliasName": "Result",
+        "substitutedTypeName": "Swift.Array<Swift.String>",
+        "substitutedMangledTypeName": "SaySSG"
+      },
+      {
+        "typeAliasName": "DefaultValue",
+        "substitutedTypeName": "Swift.String",
+        "substitutedMangledTypeName": "SS"
+      }
+    ],
+    "properties": [
+      {
+        "label": "_addFeedIntent",
+        "type": "AppIntents.IntentParameterDependency<NetNewsWire_iOS.AddFeedAppIntent>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "false",
+        "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+        "line": 104,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameterDependency<NetNewsWire_iOS.AddFeedAppIntent>",
+          "arguments": [
+            {
+              "label": "",
+              "type": "Swift.KeyPath<NetNewsWire_iOS.AddFeedAppIntent, AppIntents.IntentParameter<Swift.Optional<Swift.String>>>",
+              "valueKind": "KeyPath",
+              "value": {
+                "path": "$accountName",
+                "rootType": "NetNewsWire_iOS.AddFeedAppIntent",
+                "components": [
+                  {
+                    "label": "$accountName",
+                    "type": "AppIntents.IntentParameter<Swift.Optional<Swift.String>>"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "label": "addFeedIntent",
+        "type": "Swift.Optional<AppIntents.IntentProjection<NetNewsWire_iOS.AddFeedAppIntent>>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+        "line": 104,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameterDependency<NetNewsWire_iOS.AddFeedAppIntent>",
+          "arguments": [
+            {
+              "label": "",
+              "type": "Swift.KeyPath<NetNewsWire_iOS.AddFeedAppIntent, AppIntents.IntentParameter<Swift.Optional<Swift.String>>>",
+              "valueKind": "KeyPath",
+              "value": {
+                "path": "$accountName",
+                "rootType": "NetNewsWire_iOS.AddFeedAppIntent",
+                "components": [
+                  {
+                    "label": "$accountName",
+                    "type": "AppIntents.IntentParameter<Swift.Optional<Swift.String>>"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "propertyWrappers": [
+          {
+            "type": "AppIntents.IntentParameterDependency<NetNewsWire_iOS.AddFeedAppIntent>",
+            "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/AddFeedAppIntent.swift",
+            "line": 103,
+            "arguments": [
+              {
+                "label": "",
+                "type": "Swift.KeyPath<NetNewsWire_iOS.AddFeedAppIntent, AppIntents.IntentParameter<Swift.Optional<Swift.String>>>",
+                "valueKind": "KeyPath",
+                "value": {
+                  "path": "$accountName",
+                  "rootType": "NetNewsWire_iOS.AddFeedAppIntent",
+                  "components": [
+                    {
+                      "label": "$accountName",
+                      "type": "AppIntents.IntentParameter<Swift.Optional<Swift.String>>"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "typeName": "NetNewsWire_iOS.NetNewsWireAppShortcuts",
+    "mangledTypeName": "15NetNewsWire_iOS0abC12AppShortcutsV",
+    "kind": "struct",
+    "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/NetNewsWireAppShortcuts.swift",
+    "line": 11,
+    "conformances": [
+      "AppIntents.AppShortcutsProvider",
+      "Swift.Sendable",
+      "Swift.SendableMetatype",
+      "Swift.BitwiseCopyable"
+    ],
+    "allConformances": [
+      {
+        "protocolName": "AppIntents.AppShortcutsProvider",
+        "conformanceDefiningModule": "NetNewsWire_iOS"
+      },
+      {
+        "protocolName": "Swift.Sendable",
+        "conformanceDefiningModule": "NetNewsWire_iOS"
+      },
+      {
+        "protocolName": "Swift.SendableMetatype",
+        "conformanceDefiningModule": "NetNewsWire_iOS"
+      },
+      {
+        "protocolName": "Swift.BitwiseCopyable",
+        "conformanceDefiningModule": "NetNewsWire_iOS"
+      }
+    ],
+    "associatedTypeAliases": [],
+    "properties": [
+      {
+        "label": "appShortcuts",
+        "type": "Swift.Array<AppIntents.AppShortcut>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "true",
+        "file": "/home/builder/reg-nnw-2105/omarchy-xtool/Sources/NetNewsWire-iOS/iOS/AppIntents/NetNewsWireAppShortcuts.swift",
+        "line": 13,
+        "valueKind": "Builder",
+        "value": {
+          "type": "AppIntents.AppShortcutsBuilder",
+          "members": [
+            {
+              "kind": "buildExpression",
+              "element": {
+                "valueKind": "InitCall",
+                "value": {
+                  "type": "AppIntents.AppShortcut",
+                  "arguments": [
+                    {
+                      "label": "intent",
+                      "type": "NetNewsWire_iOS.AddFeedAppIntent",
+                      "valueKind": "InitCall",
+                      "value": {
+                        "type": "NetNewsWire_iOS.AddFeedAppIntent",
+                        "arguments": []
+                      }
+                    },
+                    {
+                      "label": "phrases",
+                      "type": "Swift.Array<AppIntents.AppShortcutPhrase<NetNewsWire_iOS.AddFeedAppIntent>>",
+                      "valueKind": "Array",
+                      "value": [
+                        {
+                          "valueKind": "InterpolatedStringLiteral",
+                          "value": {
+                            "segments": [
+                              {
+                                "valueKind": "RawLiteral",
+                                "value": "Add a feed to "
+                              },
+                              {
+                                "valueKind": "Enum",
+                                "value": {
+                                  "name": "applicationName"
+                                }
+                              },
+                              {
+                                "valueKind": "RawLiteral",
+                                "value": ""
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "valueKind": "InterpolatedStringLiteral",
+                          "value": {
+                            "segments": [
+                              {
+                                "valueKind": "RawLiteral",
+                                "value": "Add feed in "
+                              },
+                              {
+                                "valueKind": "Enum",
+                                "value": {
+                                  "name": "applicationName"
+                                }
+                              },
+                              {
+                                "valueKind": "RawLiteral",
+                                "value": ""
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "shortTitle",
+                      "type": "Foundation.LocalizedStringResource",
+                      "valueKind": "RawLiteral",
+                      "value": "Add Feed"
+                    },
+                    {
+                      "label": "systemImageName",
+                      "type": "Swift.String",
+                      "valueKind": "RawLiteral",
+                      "value": "plus"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+]

@@ -1,0 +1,84 @@
+apiVersion: ssu/v1
+nlu:
+  shortcuts:
+    bundleIdentifier: org.example.ProbeD
+    intents:
+    - metadata:
+        name: BIntent_0
+        title: Beta
+      corpuses:
+        training:
+        - locale: en
+          utterances:
+          - '{${+prefix} }Beta ${+applicationName}'
+    - metadata:
+        name: AIntent_1
+        title: 'Alpha: go'
+      corpuses:
+        training:
+        - locale: en
+          utterances:
+          - '{${+prefix} }Open ${ZEnum} in ${+applicationName}'
+          - '{${+prefix} }Alpha ${+applicationName} now'
+          - '{${+prefix} }${+applicationName} alpha'
+    - metadata:
+        name: CIntent_2
+        title: Gamma
+      corpuses:
+        training:
+        - locale: en
+          utterances:
+          - '{${+prefix} }Gamma ${+applicationName}'
+    - metadata:
+        name: +negative
+      corpuses:
+        training:
+        - locale: en
+          utterances:
+          - '{${+prefix} }${+standardAppShortcutNegatives}'
+variables:
+- name: +applicationName
+  type: ssu/expansion
+  definitions:
+  - locale: en
+    synomyms:
+    - 'Cafu00e9: Pro'
+- name: XEntity
+  type: ssu/parameter
+  definitions:
+  - locale: en
+    synomyms:
+    - Ex
+- name: ZEnum
+  type: ssu/parameter
+  definitions:
+  - locale: en
+    synomyms:
+    - 'On'
+    - '- dash'
+    - it's
+    - 'a: b'
+    - '#tag'
+    - 'true'
+    - '123'
+    - 'null'
+    - ' lead'
+    - Plain words & more
+- name: YEntity
+  type: ssu/parameter
+  definitions:
+  - locale: en
+    synomyms:
+    - Why Thing
+- name: +prefix
+  type: ssu/expansion
+  definitions:
+  - locale: en
+    synomyms:
+      $ref: ssu://Resources/prefix/en.yaml
+- name: +standardAppShortcutNegatives
+  type: ssu/expansion
+  definitions:
+  - locale: en
+    synomyms:
+      $ref: ssu://Resources/standardAppShortcutNegatives/en.yaml

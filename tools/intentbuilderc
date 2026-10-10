@@ -1,0 +1,640 @@
+#!/usr/bin/python3
+"""Linux stand-in for Apple's intentbuilderc (SiriKit intent definition compiler),
+for SwiftBuild under xtool.
+
+SwiftBuild contract (swift-build Sources/SWBApplePlatform, Specs/Intents.xcspec +
+IntentsCompiler.swift):
+  compile:  intentbuilderc compile -input <file> -output <ProductResourcesDir>/
+            [-classPrefix <prefix>]
+            -> writes <output>/<base>.intentdefinition, the bundle resource. Apple's
+               Xcode 27 tool re-serializes the plist, restamps the INIntentDefinition
+               tools/system version keys and adds an INIntentHash integer per intent;
+               this stand-in copies the input bytes instead (same keys otherwise, no
+               hash - files from older Xcode lack it and load the same).
+  codegen:  intentbuilderc generate -dryRun -input <file> -output
+            <DERIVED_FILE_DIR>/IntentDefinitionGenerated/<ModelName> -classPrefix
+            <prefix> -language Swift -swiftVersion <v> -visibility <vis> -moduleName <m>
+            -dryRun prints the absolute paths of the files it would generate, one per
+            line (IntentsCompiler prepends a private prefix relative to -output);
+            the same command without -dryRun writes those files.
+            Order: one file per intent in INIntents array order (<Intent>Intent.swift),
+            then one per INEnums entry (<Enum>.swift), then one per INTypes entry
+            (<Type>.swift).
+
+Output matches Xcode 27.0 intentbuilderc (27A266a) for the Swift language: byte
+identical generated text for Mastodon's Intents.intentdefinition (SendPost intent,
+PostVisibility enum, Post/Account types) and WidgetExtension.intentdefinition
+(FollowersCount, MultiFollowersCount, LatestFollowers, Hashtag intents).
+Generation rules observed from those inputs: handle is required unless the intent is
+INIntentEligibleForWidgets; Boolean parameters are NSNumber? with an
+`iOS 13.0, macOS 10.16` availability; enum-backed parameters are Integer with
+INIntentParameterEnumType; parameter property/availability rules and the static
+`failure(failureReason:)` response convenience follow the same inputs.
+"""
+import os
+import plistlib
+import posixpath
+import sys
+
+USAGE = (
+    "Usage: intentbuilderc compile -input <path> -output <path> [-classPrefix <classprefix>]\n"
+    "       intentbuilderc generate -input <path> -output <path> -language <language> "
+    "[-classPrefix <classprefix>] [-swiftVersion <swiftversion>] [-visibility <visibility>] "
+    "[-moduleName <modulename>] [-dryRun]\n"
+    "Options:\n"
+    "    -input PATH                              Compile the intent definition file at PATH\n"
+    "    -output PATH                             Output directory\n"
+    '    -language NAME                           Language of generated classes ("Objective-C", "Swift")\n'
+    "    -classPrefix NAME                        Class prefix to use for the generated classes\n"
+    "    -swiftVersion NAME                       Version of Swift to use for the generated classes\n"
+    "    -visibility (public, private, project)   Visibility attribute for the generated classes\n"
+    "    -moduleName NAME                         The name of the module that contains generated classes\n"
+    "    -dryRun                                  If specified, no code generation will be performed."
+)
+
+AVAIL12 = "@available(iOS 12.0, macOS 11.0, watchOS 5.0, *) @available(tvOS, unavailable)"
+AVAIL13 = "@available(iOS 13.0, macOS 11.0, watchOS 6.0, *)"
+AVAIL13_BOOL = "@available(iOS 13.0, macOS 10.16, watchOS 6.0, *)"
+AVAIL14 = "@available(iOS 14.0, macOS 11.0, watchOS 7.0, *)"
+
+RESPONSE_CODE_CASES = ["unspecified", "ready", "continueInApp", "inProgress",
+                       "success", "failure", "failureRequiringAppLaunch"]
+
+
+def die(msg, code=1):
+    print(f"error: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+def usage_error(msg):
+    print(USAGE, file=sys.stderr)
+    print(f"error: {msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+def parse_args(argv):
+    sub = argv[0] if argv and argv[0] in ("compile", "generate") else None
+    if sub is None:
+        print("No arguments were given" if not argv else USAGE, file=sys.stderr)
+        sys.exit(1)
+    opts = {"input": None, "output": None, "language": None, "dry_run": False}
+    flags = {"-input": "input", "-output": "output", "-language": "language",
+             "-classPrefix": "class_prefix", "-swiftVersion": "swift_version",
+             "-visibility": "visibility", "-moduleName": "module_name"}
+    i = 1
+    while i < len(argv):
+        a = argv[i]
+        if a == "-dryRun":
+            opts["dry_run"] = True
+        elif a in flags:
+            if "=" in a:
+                val = a.split("=", 1)[1]
+            else:
+                if i + 1 >= len(argv):
+                    usage_error(f"Missing value for {a}")
+                val = argv[i + 1]
+                i += 1
+            opts[flags[a]] = val
+        else:
+            usage_error(f"Unknown argument: {a}")
+        i += 1
+    if not opts["input"] or not opts["output"]:
+        if sub == "generate":
+            usage_error("Missing input, output or language")
+        usage_error("Missing input or output")
+    if sub == "generate":
+        if not opts["language"]:
+            usage_error("Missing input, output or language")
+        if opts["language"] not in ("Swift", "Objective-C"):
+            usage_error('Incorrect language, should be "Objective-C" or "Swift"')
+    opts["sub"] = sub
+    return opts
+
+
+def load_model(path):
+    if not os.path.isfile(path):
+        die(f"{path}: The file \u201c{os.path.basename(path)}\u201d doesn\u2019t exist.")
+    try:
+        with open(path, "rb") as f:
+            return plistlib.load(f)
+    except Exception as e:
+        die(f"{os.path.basename(path)}: {e}")
+
+
+# ------------------------------------------------------------------ Swift model
+
+def cap(s):
+    return s[0].upper() + s[1:] if s else s
+
+
+class Param:
+    """One INIntentParameter* / INIntentResponseParameter* dict."""
+
+    def __init__(self, d):
+        self.name = d.get("INIntentParameterName") or d.get("INIntentResponseParameterName")
+        self.type = d.get("INIntentParameterType") or d.get("INIntentParameterType")
+        self.type = d.get("INIntentParameterType", d.get("INIntentResponseParameterType"))
+        self.obj_type = d.get("INIntentParameterObjectType",
+                              d.get("INIntentResponseParameterObjectType"))
+        self.enum_type = d.get("INIntentParameterEnumType")
+        self.multi = d.get("INIntentParameterSupportsMultipleValues",
+                           d.get("INIntentResponseParameterSupportsMultipleValues", False))
+        self.resolves = d.get("INIntentParameterSupportsResolution", False)
+        self.dynamic = d.get("INIntentParameterSupportsDynamicEnumeration", False)
+        self.search = d.get("INIntentParameterSupportsSearch", False)
+
+    def swift_type(self):
+        """Property type as written (optional unless enum)."""
+        if self.enum_type:
+            if self.multi:
+                return f"[{self.enum_type}]?"
+            return self.enum_type
+        if self.obj_type or self.type == "Object":
+            t = self.obj_type or "INObject"
+        else:
+            t = {"String": "String", "Boolean": "NSNumber", "Integer": "NSNumber",
+                 "Double": "NSNumber", "Float": "NSNumber", "Date": "NSDate",
+                 "URL": "URL", "Duration": "NSNumber", "DecimalNumber": "NSDecimalNumber",
+                 "Location": "CLPlacemark", "Person": "INPerson"}.get(self.type)
+            if t is None:
+                die(f"unsupported parameter type: {self.type}")
+        if t == "String":
+            return f"[String]?" if self.multi else "String?"
+        if t in ("URL",):
+            base = t
+        else:
+            base = t
+        return f"[{base}]?" if self.multi else f"{base}?"
+
+    def needs_avail13(self):
+        if self.enum_type and not self.multi:
+            return False
+        if self.swift_type() == "String?" or self.swift_type() == "[String]?":
+            return False
+        if self.obj_type or self.type == "Object":
+            return False
+        return True
+
+    def resolution_result(self):
+        if self.enum_type:
+            return f"{self.enum_type}ResolutionResult"
+        if self.obj_type or self.type == "Object":
+            t = self.obj_type or "INObject"
+            return f"[{t}ResolutionResult]" if self.multi else f"{t}ResolutionResult"
+        return {
+            "String": "INStringResolutionResult", "Boolean": "INBooleanResolutionResult",
+            "Integer": "INIntegerResolutionResult", "Double": "INDoubleResolutionResult",
+            "Float": "INFloatResolutionResult", "Date": "INDateResolutionResult",
+            "URL": "INURLResolutionResult", "Duration": "INDurationResolutionResult",
+            "DecimalNumber": "INDecimalNumberResolutionResult",
+            "Location": "INPlacemarkResolutionResult", "Person": "INPersonResolutionResult",
+        }.get(self.type, "INIntentResolutionResult")
+
+
+class EnumDef:
+    def __init__(self, d):
+        self.name = d["INEnumName"]
+        self.values = [(v["INEnumValueName"],
+                        v.get("INEnumValueIndex", i))
+                       for i, v in enumerate(d.get("INEnumValues", []))]
+
+
+class TypeDef:
+    def __init__(self, d):
+        self.name = d["INTypeName"]
+        # Only non-default properties are emitted; default ones live on INObject.
+        self.props = [(p["INTypePropertyName"], p["INTypePropertyType"],
+                       p.get("INTypePropertySupportsMultipleValues", False))
+                      for p in d.get("INTypeProperties", [])
+                      if not p.get("INTypePropertyDefault")]
+
+
+class Intent:
+    def __init__(self, d):
+        self.name = d["INIntentName"]
+        self.params = [Param(p) for p in d.get("INIntentParameters", [])]
+        resp = d.get("INIntentResponse", {})
+        self.out_params = [Param(p) for p in resp.get("INIntentResponseParameters", [])]
+        self.widgets = d.get("INIntentEligibleForWidgets", False)
+        codes = resp.get("INIntentResponseCodes", [])
+        self.failure_format = next((c.get("INIntentResponseCodeFormatString", "")
+                                    for c in codes if c.get("INIntentResponseCodeName") == "failure"), "")
+
+
+# ------------------------------------------------------------------ emitters
+
+def header(name):
+    return (f"//\n// {name}.swift\n//\n"
+            "// This file was automatically generated and should not be edited.\n//\n\n"
+            "#if canImport(Intents)\n\nimport Intents\n\n")
+
+
+FOOTER = "#endif\n"
+
+
+def prop_lines(p):
+    t = p.swift_type()
+    if p.needs_avail13() and t != "NSNumber?":
+        avail = AVAIL13
+    elif t == "NSNumber?":
+        avail = AVAIL13_BOOL
+    else:
+        avail = None
+    body = f"    @NSManaged public var {p.name}: {t}"
+    return f"    {avail}\n{body}" if avail else body
+
+
+def prop_block(params):
+    """Property declarations joined the way intentbuilderc does: blank lines
+    around availability-marked properties, single newlines between plain ones."""
+    lines = [prop_lines(p) for p in params]
+    out = []
+    for i, ln in enumerate(lines):
+        if i and (ln.startswith("    @available") or lines[i - 1].startswith("    @available")):
+            out.append("")
+        out.append(ln)
+    return "\n".join(out)
+
+
+def intent_class(intent):
+    body = "\n\n" + prop_block(intent.params) + "\n\n" if intent.params else "\n\n"
+    return (f"{AVAIL12}\n@objc({intent.name}Intent)\n"
+            f"public class {intent.name}Intent: INIntent {{{body}}}")
+
+
+def resolution_section(intent, params):
+    doc = (
+        "    /*!\n"
+        "     @abstract Resolution methods - Determine if this intent is ready for the next step (confirmation)\n"
+        "     @discussion Called to make sure the app extension is capable of handling this intent in its current form. This method is for validating if the intent needs any further fleshing out.\n"
+        "\n"
+        "     @param  intent The input intent\n"
+        "     @param  completion The response block contains an INIntentResolutionResult for the parameter being resolved\n"
+        "\n"
+        "     @see INIntentResolutionResult\n"
+        "     */"
+    )
+    items = []
+    for p in params:
+        renamed = f'    @available(*, renamed: "resolve{cap(p.name)}(for:)")\n'
+        sel = f"resolve{cap(p.name)}For{intent.name}"
+        r = p.resolution_result()
+        items.append(
+            f"    {AVAIL13}\n{renamed}"
+            f"    @objc({sel}:withCompletion:)\n"
+            f"    func resolve{cap(p.name)}(for intent: {intent.name}Intent, with completion: @escaping ({r}) -> Swift.Void)\n"
+            f"\n"
+            f"    {AVAIL13}\n"
+            f"    @objc({sel}:withCompletion:)\n"
+            f"    func resolve{cap(p.name)}(for intent: {intent.name}Intent) async -> {r}")
+    return doc + "\n" + "\n\n".join(items)
+
+
+def dynamic_section(intent, params):
+    search = any(p.search for p in params)
+    term_doc = "     @param  searchTerm The search term\n" if search else ""
+    doc = (
+        "    /*!\n"
+        "     @abstract Dynamic options methods - provide options for the parameter at runtime\n"
+        "     @discussion Called to query dynamic options for the parameter and this intent in its current form.\n"
+        "\n"
+        "     @param  intent The input intent\n"
+        + term_doc +
+        "     @param  completion The response block contains options for the parameter\n"
+        "     */"
+    )
+    items = []
+    for p in params:
+        elem = p.obj_type or ("NSString" if p.type == "String" else "INObject")
+        term_sig = ", searchTerm: String?" if p.search else ""
+        term_sel = "searchTerm:" if p.search else ""
+        renamed = (f'    @available(*, renamed: "provide{cap(p.name)}OptionsCollection'
+                   f'(for:searchTerm:)")\n' if p.search else
+                   f'    @available(*, renamed: "provide{cap(p.name)}OptionsCollection(for:)")\n')
+        sel = f"provide{cap(p.name)}OptionsCollectionFor{intent.name}"
+        items.append(
+            f"    {AVAIL14}\n{renamed}"
+            f"    @objc({sel}:{term_sel}withCompletion:)\n"
+            f"    func provide{cap(p.name)}OptionsCollection(for intent: {intent.name}Intent{term_sig}, with completion: @escaping (INObjectCollection<{elem}>?, Error?) -> Swift.Void)\n"
+            f"\n"
+            f"    {AVAIL14}\n"
+            f"    @objc({sel}:{term_sel}withCompletion:)\n"
+            f"    func provide{cap(p.name)}OptionsCollection(for intent: {intent.name}Intent{term_sig}) async throws -> INObjectCollection<{elem}>")
+    return doc + "\n" + "\n\n".join(items)
+
+
+def confirm_section(intent):
+    i, n = intent.name + "Intent", intent.name
+    return (
+        '    @available(*, renamed: "confirm(intent:)")\n'
+        f"    @objc(confirm{n}:completion:)\n"
+        f"    optional func confirm(intent: {i}, completion: @escaping ({i}Response) -> Swift.Void)\n"
+        "\n"
+        "    /*!\n"
+        "     @abstract Confirmation method - Validate that this intent is ready for the next step (i.e. handling)\n"
+        "     @discussion Called prior to asking the app to handle the intent. The app should return a response object that contains additional information about the intent, which may be relevant for the system to show the user prior to handling. If unimplemented, the system will assume the intent is valid, and will assume there is no additional information relevant to this intent.\n"
+        "\n"
+        "     @param  intent The input intent\n"
+        f"     @param  completion The response block contains a {i}Response containing additional details about the intent that may be relevant for the system to show the user prior to handling.\n"
+        "\n"
+        f"     @see {i}Response\n"
+        "     */\n"
+        f"    {AVAIL13}\n"
+        f"    @objc(confirm{n}:completion:)\n"
+        f"    optional func confirm(intent: {i}) async -> {i}Response")
+
+
+def handling_section(intent):
+    i, n = intent.name + "Intent", intent.name
+    doc = (
+        "    /*!\n"
+        f"     @abstract Handling method - Execute the task represented by the {i} that's passed in\n"
+        "     @discussion Called to actually execute the intent. The app must return a response for this intent.\n"
+        "\n"
+        "     @param  intent The input intent\n"
+        f"     @param  completion The response handling block takes a {i}Response containing the details of the result of having executed the intent\n"
+        "\n"
+        f"     @see  {i}Response\n"
+        "     */"
+    )
+    opt = "" if not intent.widgets else "optional "
+    if not intent.widgets:
+        # Required handle: completion variant first (no doc), then doc above the async one.
+        return (
+            '    @available(*, renamed: "handle(intent:)")\n'
+            f"    @objc(handle{n}:completion:)\n"
+            f"    func handle(intent: {i}, completion: @escaping ({i}Response) -> Swift.Void)\n"
+            "    \n"
+            + doc + "\n"
+            f"    {AVAIL13}\n"
+            f"    @objc(handle{n}:completion:)\n"
+            f"    func handle(intent: {i}) async -> {i}Response")
+    return (
+        doc + "\n"
+        '    @available(*, renamed: "handle(intent:)")\n'
+        f"    @objc(handle{n}:completion:)\n"
+        f"    optional func handle(intent: {i}, completion: @escaping ({i}Response) -> Swift.Void)\n"
+        "    \n"
+        f"    {AVAIL13}\n"
+        f"    @objc(handle{n}:completion:)\n"
+        f"    optional func handle(intent: {i}) async -> {i}Response")
+
+
+def defaults_section(intent, params):
+    doc = (
+        "    /*!\n"
+        "     @abstract Default values for parameters with dynamic options\n"
+        "     @discussion Called to query the parameter default value.\n"
+        "     */"
+    )
+    items = []
+    for p in params:
+        t = p.obj_type or ("String" if p.type == "String" else "INObject")
+        t = f"[{t}]?" if p.multi else f"{t}?"
+        items.append(
+            f"    {AVAIL14}\n"
+            f"    @objc(default{cap(p.name)}For{intent.name}:)\n"
+            f"    optional func default{cap(p.name)}(for intent: {intent.name}Intent) -> {t}")
+    return doc + "\n" + "\n\n".join(items)
+
+
+def deprecated_section(intent, params):
+    doc = (
+        "    /*!\n"
+        "     @abstract Deprecated dynamic options methods.\n"
+        "     */"
+    )
+    items = []
+    for p in params:
+        t = p.obj_type or ("String" if p.type == "String" else "INObject")
+        items.append(
+            '    @available(iOS, introduced: 13.0, deprecated: 14.0, message: "")\n'
+            '    @available(watchOS, introduced: 6.0, deprecated: 7.0, message: "")\n'
+            f"    @objc(provide{cap(p.name)}OptionsFor{intent.name}:withCompletion:)\n"
+            f"    optional func provide{cap(p.name)}Options(for intent: {intent.name}Intent, with completion: @escaping ([{t}]?, Error?) -> Swift.Void)")
+    return doc + "\n" + "\n\n".join(items)
+
+
+def intent_protocol(intent):
+    i, n = intent.name + "Intent", intent.name
+    sections = []
+    resolving = [p for p in intent.params if p.resolves]
+    dynamic = [p for p in intent.params if p.dynamic]
+    if not intent.widgets:
+        # Required handle intents emit the handling section first.
+        sections.append(handling_section(intent))
+    if resolving:
+        sections.append(resolution_section(intent, resolving))
+    if dynamic:
+        sections.append(dynamic_section(intent, dynamic))
+    sections.append(confirm_section(intent))
+    if intent.widgets:
+        sections.append(handling_section(intent))
+    if dynamic:
+        sections.append(defaults_section(intent, dynamic))
+        sections.append(deprecated_section(intent, dynamic))
+    doc = (
+        "/*!\n"
+        f" @abstract Protocol to declare support for handling a {i}. By implementing this protocol, a class can provide logic for resolving, confirming and handling the intent.\n"
+        " @discussion The minimum requirement for an implementing class is that it should be able to handle the intent. The confirmation method is optional. The handling method is always called last, after confirming the intent.\n"
+        " */")
+    body = "\n\n".join(sections)
+    return (f"{doc}\n{AVAIL12}\n@objc({i}Handling)\n"
+            f"public protocol {i}Handling: NSObjectProtocol {{\n\n{body}\n\n}}")
+
+
+def response_code_enum(intent):
+    cases = "\n".join(f"    case {c} = {i}" if i == 0 else f"    case {c}"
+                      for i, c in enumerate(RESPONSE_CODE_CASES))
+    return ("/*!\n"
+            " @abstract Constants indicating the state of the response.\n"
+            " */\n"
+            f"{AVAIL12}\n"
+            f"@objc public enum {intent.name}IntentResponseCode: Int {{\n{cases}\n}}")
+
+
+def response_class(intent):
+    i = intent.name + "Intent"
+    props = prop_block(intent.out_params)
+    parts = []
+    if props:
+        parts.append(props)
+    parts.append(
+        "    /*!\n"
+        "     @abstract The response code indicating your success or failure in confirming or handling the intent.\n"
+        "     */\n"
+        f"    @objc public fileprivate(set) var code: {i}ResponseCode = .unspecified")
+    parts.append(
+        "    /*!\n"
+        "     @abstract Initializes the response object with the specified code and user activity object.\n"
+        "     @discussion The app extension has the option of capturing its private state as an NSUserActivity and returning it as the 'currentActivity'. If the app is launched, an NSUserActivity will be passed in with the private state. The NSUserActivity may also be used to query the app's UI extension (if provided) for a view controller representing the current intent handling state. In the case of app launch, the NSUserActivity will have its activityType set to the name of the intent. This intent object will also be available in the NSUserActivity.interaction property.\n"
+        "\n"
+        "     @param  code The response code indicating your success or failure in confirming or handling the intent.\n"
+        "     @param  userActivity The user activity object to use when launching your app. Provide an object if you want to add information that is specific to your app. If you specify nil, the system automatically creates a user activity object for you, sets its type to the class name of the intent being handled, and fills it with an INInteraction object containing the intent and your response.\n"
+        "     */\n"
+        "    @objc(initWithCode:userActivity:)\n"
+        f"    public convenience init(code: {i}ResponseCode, userActivity: NSUserActivity?) {{\n"
+        "        self.init()\n"
+        "        self.code = code\n"
+        "        self.userActivity = userActivity\n"
+        "    }")
+    # Static failure convenience when the failure code's format string interpolates
+    # a String output parameter (e.g. "Posting failed. ${failureReason}").
+    string_out = {p.name for p in intent.out_params
+                  if not p.obj_type and p.type == "String"}
+    import re
+    refs = re.findall(r"\$\{(\w+)\}", intent.failure_format)
+    if len(refs) == 1 and refs[0] in string_out:
+        ref = refs[0]
+        parts.append(
+            "    /*!\n"
+            "     @abstract Initializes and returns the response object with the failure code.\n"
+            "     */\n"
+            f"    @objc(failureIntentResponseWith{cap(ref)}:)\n"
+            f"    public static func failure({ref}: String) -> {i}Response {{\n"
+            f"        let intentResponse = {i}Response(code: .failure, userActivity: nil)\n"
+            f"        intentResponse.{ref} = {ref}\n"
+            f"        return intentResponse\n"
+            f"    }}")
+    body = "\n\n".join(parts)
+    return f"{AVAIL12}\n@objc({i}Response)\npublic class {i}Response: INIntentResponse {{\n\n{body}\n\n}}"
+
+
+def intent_file(intent):
+    blocks = [intent_class(intent), intent_protocol(intent),
+              response_code_enum(intent), response_class(intent)]
+    name = f"{intent.name}Intent.swift"
+    return name, header(intent.name + "Intent") + "\n\n".join(blocks) + "\n\n" + FOOTER
+
+
+def enum_file(e):
+    cases = "\n".join(f"    case `{name}` = {idx}" for name, idx in e.values)
+    avail13t = f"{AVAIL13} @available(tvOS, unavailable)"
+    code = (f"{AVAIL12}\n@objc public enum {e.name}: Int {{\n{cases}\n}}\n\n"
+            f"{avail13t}\n@objc({e.name}ResolutionResult)\n"
+            f"public class {e.name}ResolutionResult: INEnumResolutionResult {{\n"
+            "\n"
+            f"    // This resolution result is for when the app extension wants to tell Siri to proceed, with a given {e.name}. The resolvedValue can be different than the original {e.name}. This allows app extensions to apply business logic constraints.\n"
+            "    // Use notRequired() to continue with a 'nil' value.\n"
+            f"    @objc(successWithResolved{e.name}:)\n"
+            f"    public class func success(with resolvedValue: {e.name}) -> Self {{\n"
+            "        return __success(withResolvedValue: resolvedValue.rawValue)\n"
+            "    }\n"
+            "\n"
+            "    // This resolution result is to ask Siri to confirm if this is the value with which the user wants to continue.\n"
+            f"    @objc(confirmationRequiredWith{e.name}ToConfirm:)\n"
+            f"    public class func confirmationRequired(with valueToConfirm: {e.name}) -> Self {{\n"
+            "        return __confirmationRequiredWithValue(toConfirm: valueToConfirm.rawValue)\n"
+            "    }\n"
+            "}")
+    return f"{e.name}.swift", header(e.name) + code + "\n\n" + FOOTER
+
+
+PROP_TYPE_SWIFT = {"String": "String", "URL": "URL", "Integer": "NSNumber",
+                   "Double": "NSNumber", "Boolean": "NSNumber", "Date": "NSDate"}
+
+
+def type_file(t):
+    props = []
+    for name, ptype, multi in t.props:
+        base = PROP_TYPE_SWIFT.get(ptype)
+        if base is None:
+            die(f"unsupported type property type: {ptype}")
+        s = f"[{base}]?" if multi else f"{base}?"
+        props.append(f"    {AVAIL13}\n    @NSManaged public var {name}: {s}")
+    avail13t = f"{AVAIL13} @available(tvOS, unavailable)"
+    code = (f"{AVAIL12}\n@objc({t.name})\npublic class {t.name}: INObject {{\n\n"
+            + "\n\n".join(props)
+            + "\n\n    override public class var supportsSecureCoding: Bool { true }\n\n}\n\n"
+            f"{avail13t}\n@objc({t.name}ResolutionResult)\n"
+            f"public class {t.name}ResolutionResult: INObjectResolutionResult {{\n"
+            "\n"
+            f"    // This resolution result is for when the app extension wants to tell Siri to proceed, with a given {t.name}. The resolvedValue can be different than the original {t.name}. This allows app extensions to apply business logic constraints.\n"
+            "    // Use notRequired() to continue with a 'nil' value.\n"
+            f"    @objc(successWithResolved{t.name}:)\n"
+            f"    public class func success(with resolvedObject: {t.name}) -> Self {{\n"
+            "        return super.success(with: resolvedObject)\n"
+            "    }\n"
+            "\n"
+            f"    // This resolution result is to ask Siri to disambiguate between the provided {t.name}.\n"
+            f"    @objc(disambiguationWith{t.name}sToDisambiguate:)\n"
+            f"    public class func disambiguation(with objectsToDisambiguate: [{t.name}]) -> Self {{\n"
+            "        return super.disambiguation(with: objectsToDisambiguate)\n"
+            "    }\n"
+            "\n"
+            "    // This resolution result is to ask Siri to confirm if this is the value with which the user wants to continue.\n"
+            f"    @objc(confirmationRequiredWith{t.name}ToConfirm:)\n"
+            f"    public class func confirmationRequired(with objectToConfirm: {t.name}?) -> Self {{\n"
+            "        return super.confirmationRequired(with: objectToConfirm)\n"
+            "    }\n"
+            "\n"
+            "    @available(*, unavailable)\n"
+            "    override public class func success(with resolvedObject: INObject) -> Self {\n"
+            "        fatalError()\n"
+            "    }\n"
+            "\n"
+            "    @available(*, unavailable)\n"
+            "    override public class func disambiguation(with objectsToDisambiguate: [INObject]) -> Self {\n"
+            "        fatalError()\n"
+            "    }\n"
+            "\n"
+            "    @available(*, unavailable)\n"
+            "    override public class func confirmationRequired(with objectToConfirm: INObject?) -> Self {\n"
+            "        fatalError()\n"
+            "    }\n"
+            "\n"
+            "}")
+    return f"{t.name}.swift", header(t.name) + code + "\n\n" + FOOTER
+
+
+# ------------------------------------------------------------------ commands
+
+def cmd_generate(opts):
+    if opts["language"] != "Swift":
+        die("Objective-C code generation is not supported on this platform")
+    model = load_model(opts["input"])
+    intents = [Intent(d) for d in model.get("INIntents", [])]
+    enums = [EnumDef(d) for d in model.get("INEnums", [])]
+    types = [TypeDef(d) for d in model.get("INTypes", [])]
+    files = [intent_file(i) for i in intents]
+    files += [enum_file(e) for e in enums]
+    files += [type_file(t) for t in types]
+    outdir = opts["output"]
+    paths = [posixpath.normpath(posixpath.join(outdir, name)) for name, _ in files]
+    if not opts["dry_run"]:
+        os.makedirs(outdir, exist_ok=True)
+        for (name, text), path in zip(files, paths):
+            with open(path, "w") as f:
+                f.write(text)
+    for p in paths:
+        print(p)
+
+
+def cmd_compile(opts):
+    src = opts["input"]
+    model = load_model(src)  # validates
+    outdir = opts["output"]
+    base = os.path.basename(src)
+    for suffix in (".intentdefinition",):
+        if base.endswith(suffix):
+            base = base[: -len(suffix)]
+    os.makedirs(outdir, exist_ok=True)
+    dst = posixpath.normpath(posixpath.join(outdir, base + ".intentdefinition"))
+    with open(src, "rb") as f, open(dst, "wb") as g:
+        g.write(f.read())
+    _ = model
+
+
+def main():
+    if len(sys.argv) < 2:
+        print("No arguments were given", file=sys.stderr)
+        sys.exit(1)
+    opts = parse_args(sys.argv[1:])
+    if opts["sub"] == "compile":
+        cmd_compile(opts)
+    else:
+        cmd_generate(opts)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+case "${1:-help}" in
+  doctor)
+    echo "OS: $(. /etc/os-release; echo "$PRETTY_NAME")"
+    echo "Swift: $(swift --version | head -1)"
+    echo "xtool: $(xtool --version 2>&1 | head -1)"
+    echo "rcodesign: $(rcodesign --version 2>&1 | head -1)"
+    echo -n "Darwin SDK: "; swift sdk list 2>/dev/null || echo "not installed"
+    ;;
+  sdk)
+    [[ -f "${2:-}" ]] || { echo "Usage: ubuntu-ios sdk /path/to/Xcode.xip" >&2; exit 2; }
+    XCODE_XIP="$(readlink -f "$2")" "$ROOT/install-toolchain-upstream.sh" --user-only
+    ;;
+  convert) shift; python3 "$ROOT/tools/xcodeproj2xtool.py" "$@" ;;
+  build) shift; ulimit -n 65536 || true; exec xtool dev build "$@" ;;
+  ship) shift; ulimit -n 65536 || true; exec "$ROOT/ship.sh" "$@" ;;
+  *) cat <<'TXT'
+ubuntu-ios - build, sign and ship iOS apps from Ubuntu Linux
+
+Commands:
+  ubuntu-ios doctor
+  ubuntu-ios sdk /path/to/Xcode.xip
+  ubuntu-ios convert PROJECT --target TARGET --out DIR --bundle-id ID
+  ubuntu-ios build
+  ubuntu-ios ship
+  ubuntu-ios ship --upload
+
+For App Store Connect uploads set ASC_KEY_PATH, ASC_ISSUER_ID and ASC_KEY_ID.
+TXT
+  ;;
+esac

@@ -1,0 +1,31 @@
+diff --git a/src/device.c b/src/device.c
+index 9c256e3..61986e2 100644
+--- a/src/device.c
++++ b/src/device.c
+@@ -39,10 +39,10 @@
+ 
+ int next_device_id;
+ 
+-#define DEV_MRU 65536
++#define DEV_MRU USBIPD_SAFE_MUX_SIZE
+ 
+ #define CONN_INBUF_SIZE		262144
+-#define CONN_OUTBUF_SIZE	65536
++#define CONN_OUTBUF_SIZE	USBIPD_SAFE_MUX_SIZE
+ 
+ #define ACK_TIMEOUT 30
+ 
+diff --git a/src/usb.h b/src/usb.h
+index 79f7133..410a5a4 100644
+--- a/src/usb.h
++++ b/src/usb.h
+@@ -39,7 +39,8 @@
+ // we're using 3 * 16384 to optimize for the fragmentation
+ // this results in three URBs per full transfer, 32 USB packets each
+ // if there are ZLP issues this should make them show up easily too
+-#define USB_MTU (3 * 16384)
++#define USBIPD_SAFE_MUX_SIZE 65535
++#define USB_MTU USBIPD_SAFE_MUX_SIZE
+ 
+ #define USB_PACKET_SIZE 512
+ 

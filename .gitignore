@@ -1,0 +1,15 @@
+.env
+.env.*
+*.p8
+*.p12
+*.mobileprovision
+*.cer
+*.key
+*.ipa
+*.xip
+DerivedData/
+.build/
+.swiftpm/
+secrets/
+keys/
+.DS_Store

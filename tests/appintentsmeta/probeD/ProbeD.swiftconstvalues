@@ -1,0 +1,1782 @@
+[
+  {
+    "typeName": "ProbeD.ZEnum",
+    "mangledTypeName": "6ProbeD5ZEnumO",
+    "kind": "enum",
+    "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+    "line": 6,
+    "conformances": [
+      "Swift.Equatable",
+      "Swift.Hashable",
+      "Swift.RawRepresentable",
+      "AppIntents.AppEnum",
+      "AppIntents.AppValue",
+      "AppIntents.StaticDisplayRepresentable",
+      "AppIntents.PersistentlyIdentifiable",
+      "AppIntents.TypeDisplayRepresentable",
+      "AppIntents._IntentValue",
+      "Swift.Sendable",
+      "AppIntents.CaseDisplayRepresentable",
+      "Swift.SendableMetatype",
+      "Foundation.CustomLocalizedStringResourceConvertible",
+      "Swift.CaseIterable",
+      "Swift.BitwiseCopyable"
+    ],
+    "allConformances": [
+      {
+        "protocolName": "Swift.Equatable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.Hashable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.RawRepresentable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.AppEnum",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.AppValue",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.StaticDisplayRepresentable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.PersistentlyIdentifiable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.TypeDisplayRepresentable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents._IntentValue",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.Sendable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.CaseDisplayRepresentable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.SendableMetatype",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Foundation.CustomLocalizedStringResourceConvertible",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.CaseIterable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.BitwiseCopyable",
+        "conformanceDefiningModule": "ProbeD"
+      }
+    ],
+    "associatedTypeAliases": [
+      {
+        "typeAliasName": "RawValue",
+        "substitutedTypeName": "Swift.String",
+        "substitutedMangledTypeName": "SS"
+      },
+      {
+        "typeAliasName": "ValueType",
+        "substitutedTypeName": "ProbeD.ZEnum",
+        "substitutedMangledTypeName": "6ProbeD5ZEnumO"
+      },
+      {
+        "typeAliasName": "UnwrappedType",
+        "substitutedTypeName": "ProbeD.ZEnum",
+        "substitutedMangledTypeName": "6ProbeD5ZEnumO"
+      },
+      {
+        "typeAliasName": "Specification",
+        "substitutedTypeName": "some AppIntents.ResolverSpecification",
+        "substitutedMangledTypeName": "10AppIntents0A4EnumPAAE28defaultResolverSpecificationQrvpZQOy6ProbeD5ZEnumO_Qo_",
+        "opaqueTypeProtocolRequirements": [
+          "AppIntents.ResolverSpecification"
+        ],
+        "opaqueTypeSameTypeRequirements": []
+      },
+      {
+        "typeAliasName": "AllCases",
+        "substitutedTypeName": "Swift.Array<ProbeD.ZEnum>",
+        "substitutedMangledTypeName": "Say6ProbeD5ZEnumOG"
+      }
+    ],
+    "properties": [
+      {
+        "label": "typeDisplayRepresentation",
+        "type": "AppIntents.TypeDisplayRepresentation",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "false",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 8,
+        "valueKind": "RawLiteral",
+        "value": "Zed"
+      },
+      {
+        "label": "caseDisplayRepresentations",
+        "type": "Swift.Dictionary<ProbeD.ZEnum, AppIntents.DisplayRepresentation>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "false",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 9,
+        "valueKind": "Dictionary",
+        "value": [
+          {
+            "key": {
+              "valueKind": "Enum",
+              "value": {
+                "name": "on"
+              }
+            },
+            "value": {
+              "valueKind": "RawLiteral",
+              "value": "On"
+            }
+          },
+          {
+            "key": {
+              "valueKind": "Enum",
+              "value": {
+                "name": "dash"
+              }
+            },
+            "value": {
+              "valueKind": "RawLiteral",
+              "value": "- dash"
+            }
+          },
+          {
+            "key": {
+              "valueKind": "Enum",
+              "value": {
+                "name": "quote"
+              }
+            },
+            "value": {
+              "valueKind": "RawLiteral",
+              "value": "it's"
+            }
+          },
+          {
+            "key": {
+              "valueKind": "Enum",
+              "value": {
+                "name": "colon"
+              }
+            },
+            "value": {
+              "valueKind": "RawLiteral",
+              "value": "a: b"
+            }
+          },
+          {
+            "key": {
+              "valueKind": "Enum",
+              "value": {
+                "name": "hash"
+              }
+            },
+            "value": {
+              "valueKind": "RawLiteral",
+              "value": "#tag"
+            }
+          },
+          {
+            "key": {
+              "valueKind": "Enum",
+              "value": {
+                "name": "truthy"
+              }
+            },
+            "value": {
+              "valueKind": "RawLiteral",
+              "value": "true"
+            }
+          },
+          {
+            "key": {
+              "valueKind": "Enum",
+              "value": {
+                "name": "num"
+              }
+            },
+            "value": {
+              "valueKind": "RawLiteral",
+              "value": "123"
+            }
+          },
+          {
+            "key": {
+              "valueKind": "Enum",
+              "value": {
+                "name": "nully"
+              }
+            },
+            "value": {
+              "valueKind": "RawLiteral",
+              "value": "null"
+            }
+          },
+          {
+            "key": {
+              "valueKind": "Enum",
+              "value": {
+                "name": "lead"
+              }
+            },
+            "value": {
+              "valueKind": "RawLiteral",
+              "value": " lead"
+            }
+          },
+          {
+            "key": {
+              "valueKind": "Enum",
+              "value": {
+                "name": "plain"
+              }
+            },
+            "value": {
+              "valueKind": "RawLiteral",
+              "value": "Plain words & more"
+            }
+          }
+        ]
+      },
+      {
+        "label": "allCases",
+        "type": "Swift.Array<ProbeD.ZEnum>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "true",
+        "valueKind": "Array",
+        "value": [
+          {
+            "valueKind": "Enum",
+            "value": {
+              "name": "on"
+            }
+          },
+          {
+            "valueKind": "Enum",
+            "value": {
+              "name": "dash"
+            }
+          },
+          {
+            "valueKind": "Enum",
+            "value": {
+              "name": "quote"
+            }
+          },
+          {
+            "valueKind": "Enum",
+            "value": {
+              "name": "colon"
+            }
+          },
+          {
+            "valueKind": "Enum",
+            "value": {
+              "name": "hash"
+            }
+          },
+          {
+            "valueKind": "Enum",
+            "value": {
+              "name": "truthy"
+            }
+          },
+          {
+            "valueKind": "Enum",
+            "value": {
+              "name": "num"
+            }
+          },
+          {
+            "valueKind": "Enum",
+            "value": {
+              "name": "nully"
+            }
+          },
+          {
+            "valueKind": "Enum",
+            "value": {
+              "name": "lead"
+            }
+          },
+          {
+            "valueKind": "Enum",
+            "value": {
+              "name": "plain"
+            }
+          }
+        ]
+      },
+      {
+        "label": "rawValue",
+        "type": "Swift.String",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "valueKind": "Runtime"
+      }
+    ],
+    "cases": [
+      {
+        "name": "on",
+        "rawValue": "on"
+      },
+      {
+        "name": "dash",
+        "rawValue": "dash"
+      },
+      {
+        "name": "quote",
+        "rawValue": "quote"
+      },
+      {
+        "name": "colon",
+        "rawValue": "colon"
+      },
+      {
+        "name": "hash",
+        "rawValue": "hash"
+      },
+      {
+        "name": "truthy",
+        "rawValue": "truthy"
+      },
+      {
+        "name": "num",
+        "rawValue": "num"
+      },
+      {
+        "name": "nully",
+        "rawValue": "nully"
+      },
+      {
+        "name": "lead",
+        "rawValue": "lead"
+      },
+      {
+        "name": "plain",
+        "rawValue": "plain"
+      }
+    ]
+  },
+  {
+    "typeName": "ProbeD.YEntity",
+    "mangledTypeName": "6ProbeD7YEntityV",
+    "kind": "struct",
+    "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+    "line": 14,
+    "conformances": [
+      "AppIntents.AppEntity",
+      "AppIntents.AppValue",
+      "AppIntents.DisplayRepresentable",
+      "Swift.Identifiable",
+      "AppIntents.PersistentlyIdentifiable",
+      "AppIntents.TypeDisplayRepresentable",
+      "AppIntents._IntentValue",
+      "Swift.Sendable",
+      "AppIntents.InstanceDisplayRepresentable",
+      "Swift.SendableMetatype",
+      "Foundation.CustomLocalizedStringResourceConvertible"
+    ],
+    "allConformances": [
+      {
+        "protocolName": "AppIntents.AppEntity",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.AppValue",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.DisplayRepresentable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.Identifiable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.PersistentlyIdentifiable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.TypeDisplayRepresentable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents._IntentValue",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.Sendable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.InstanceDisplayRepresentable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.SendableMetatype",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Foundation.CustomLocalizedStringResourceConvertible",
+        "conformanceDefiningModule": "ProbeD"
+      }
+    ],
+    "associatedTypeAliases": [
+      {
+        "typeAliasName": "DefaultQuery",
+        "substitutedTypeName": "ProbeD.YQuery",
+        "substitutedMangledTypeName": "6ProbeD6YQueryV"
+      },
+      {
+        "typeAliasName": "ID",
+        "substitutedTypeName": "Swift.String",
+        "substitutedMangledTypeName": "SS"
+      },
+      {
+        "typeAliasName": "ValueType",
+        "substitutedTypeName": "ProbeD.YEntity",
+        "substitutedMangledTypeName": "6ProbeD7YEntityV"
+      },
+      {
+        "typeAliasName": "UnwrappedType",
+        "substitutedTypeName": "ProbeD.YEntity",
+        "substitutedMangledTypeName": "6ProbeD7YEntityV"
+      },
+      {
+        "typeAliasName": "Specification",
+        "substitutedTypeName": "AppIntents.EmptyResolverSpecification<ProbeD.YEntity>",
+        "substitutedMangledTypeName": "10AppIntents26EmptyResolverSpecificationVy6ProbeD7YEntityVG"
+      }
+    ],
+    "properties": [
+      {
+        "label": "id",
+        "type": "Swift.String",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "false",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 15,
+        "valueKind": "Runtime"
+      },
+      {
+        "label": "typeDisplayRepresentation",
+        "type": "AppIntents.TypeDisplayRepresentation",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "false",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 16,
+        "valueKind": "RawLiteral",
+        "value": "Why Thing"
+      },
+      {
+        "label": "defaultQuery",
+        "type": "ProbeD.YQuery",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "false",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 17,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "ProbeD.YQuery",
+          "arguments": []
+        }
+      },
+      {
+        "label": "displayRepresentation",
+        "type": "AppIntents.DisplayRepresentation",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 18,
+        "valueKind": "RawLiteral",
+        "value": "x"
+      }
+    ]
+  },
+  {
+    "typeName": "ProbeD.YQuery",
+    "mangledTypeName": "6ProbeD6YQueryV",
+    "kind": "struct",
+    "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+    "line": 20,
+    "conformances": [
+      "AppIntents.EntityQuery",
+      "AppIntents.DynamicOptionsProvider",
+      "AppIntents.PersistentlyIdentifiable",
+      "Swift.Sendable",
+      "AppIntents._SupportsAppDependencies",
+      "Swift.SendableMetatype",
+      "Swift.BitwiseCopyable"
+    ],
+    "allConformances": [
+      {
+        "protocolName": "AppIntents.EntityQuery",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.DynamicOptionsProvider",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.PersistentlyIdentifiable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.Sendable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents._SupportsAppDependencies",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.SendableMetatype",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.BitwiseCopyable",
+        "conformanceDefiningModule": "ProbeD"
+      }
+    ],
+    "associatedTypeAliases": [
+      {
+        "typeAliasName": "Entity",
+        "substitutedTypeName": "ProbeD.YEntity",
+        "substitutedMangledTypeName": "6ProbeD7YEntityV"
+      },
+      {
+        "typeAliasName": "Result",
+        "substitutedTypeName": "Swift.Array<ProbeD.YEntity>",
+        "substitutedMangledTypeName": "Say6ProbeD7YEntityVG"
+      },
+      {
+        "typeAliasName": "Result",
+        "substitutedTypeName": "Swift.Array<ProbeD.YEntity>",
+        "substitutedMangledTypeName": "Say6ProbeD7YEntityVG"
+      },
+      {
+        "typeAliasName": "DefaultValue",
+        "substitutedTypeName": "ProbeD.YEntity",
+        "substitutedMangledTypeName": "6ProbeD7YEntityV"
+      }
+    ],
+    "properties": []
+  },
+  {
+    "typeName": "ProbeD.XEntity",
+    "mangledTypeName": "6ProbeD7XEntityV",
+    "kind": "struct",
+    "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+    "line": 24,
+    "conformances": [
+      "AppIntents.AppEntity",
+      "AppIntents.AppValue",
+      "AppIntents.DisplayRepresentable",
+      "Swift.Identifiable",
+      "AppIntents.PersistentlyIdentifiable",
+      "AppIntents.TypeDisplayRepresentable",
+      "AppIntents._IntentValue",
+      "Swift.Sendable",
+      "AppIntents.InstanceDisplayRepresentable",
+      "Swift.SendableMetatype",
+      "Foundation.CustomLocalizedStringResourceConvertible"
+    ],
+    "allConformances": [
+      {
+        "protocolName": "AppIntents.AppEntity",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.AppValue",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.DisplayRepresentable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.Identifiable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.PersistentlyIdentifiable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.TypeDisplayRepresentable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents._IntentValue",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.Sendable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.InstanceDisplayRepresentable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.SendableMetatype",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Foundation.CustomLocalizedStringResourceConvertible",
+        "conformanceDefiningModule": "ProbeD"
+      }
+    ],
+    "associatedTypeAliases": [
+      {
+        "typeAliasName": "DefaultQuery",
+        "substitutedTypeName": "ProbeD.XQuery",
+        "substitutedMangledTypeName": "6ProbeD6XQueryV"
+      },
+      {
+        "typeAliasName": "ID",
+        "substitutedTypeName": "Swift.String",
+        "substitutedMangledTypeName": "SS"
+      },
+      {
+        "typeAliasName": "ValueType",
+        "substitutedTypeName": "ProbeD.XEntity",
+        "substitutedMangledTypeName": "6ProbeD7XEntityV"
+      },
+      {
+        "typeAliasName": "UnwrappedType",
+        "substitutedTypeName": "ProbeD.XEntity",
+        "substitutedMangledTypeName": "6ProbeD7XEntityV"
+      },
+      {
+        "typeAliasName": "Specification",
+        "substitutedTypeName": "AppIntents.EmptyResolverSpecification<ProbeD.XEntity>",
+        "substitutedMangledTypeName": "10AppIntents26EmptyResolverSpecificationVy6ProbeD7XEntityVG"
+      }
+    ],
+    "properties": [
+      {
+        "label": "id",
+        "type": "Swift.String",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "false",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 25,
+        "valueKind": "Runtime"
+      },
+      {
+        "label": "typeDisplayRepresentation",
+        "type": "AppIntents.TypeDisplayRepresentation",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "false",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 26,
+        "valueKind": "RawLiteral",
+        "value": "Ex"
+      },
+      {
+        "label": "defaultQuery",
+        "type": "ProbeD.XQuery",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "false",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 27,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "ProbeD.XQuery",
+          "arguments": []
+        }
+      },
+      {
+        "label": "displayRepresentation",
+        "type": "AppIntents.DisplayRepresentation",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 28,
+        "valueKind": "RawLiteral",
+        "value": "x"
+      }
+    ]
+  },
+  {
+    "typeName": "ProbeD.XQuery",
+    "mangledTypeName": "6ProbeD6XQueryV",
+    "kind": "struct",
+    "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+    "line": 30,
+    "conformances": [
+      "AppIntents.EntityQuery",
+      "AppIntents.DynamicOptionsProvider",
+      "AppIntents.PersistentlyIdentifiable",
+      "Swift.Sendable",
+      "AppIntents._SupportsAppDependencies",
+      "Swift.SendableMetatype",
+      "Swift.BitwiseCopyable"
+    ],
+    "allConformances": [
+      {
+        "protocolName": "AppIntents.EntityQuery",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.DynamicOptionsProvider",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.PersistentlyIdentifiable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.Sendable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents._SupportsAppDependencies",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.SendableMetatype",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.BitwiseCopyable",
+        "conformanceDefiningModule": "ProbeD"
+      }
+    ],
+    "associatedTypeAliases": [
+      {
+        "typeAliasName": "Entity",
+        "substitutedTypeName": "ProbeD.XEntity",
+        "substitutedMangledTypeName": "6ProbeD7XEntityV"
+      },
+      {
+        "typeAliasName": "Result",
+        "substitutedTypeName": "Swift.Array<ProbeD.XEntity>",
+        "substitutedMangledTypeName": "Say6ProbeD7XEntityVG"
+      },
+      {
+        "typeAliasName": "Result",
+        "substitutedTypeName": "Swift.Array<ProbeD.XEntity>",
+        "substitutedMangledTypeName": "Say6ProbeD7XEntityVG"
+      },
+      {
+        "typeAliasName": "DefaultValue",
+        "substitutedTypeName": "ProbeD.XEntity",
+        "substitutedMangledTypeName": "6ProbeD7XEntityV"
+      }
+    ],
+    "properties": []
+  },
+  {
+    "typeName": "ProbeD.AIntent",
+    "mangledTypeName": "6ProbeD7AIntentV",
+    "kind": "struct",
+    "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+    "line": 33,
+    "conformances": [
+      "AppIntents.AppIntent",
+      "AppIntents.PersistentlyIdentifiable",
+      "AppIntents._SupportsAppDependencies",
+      "Swift.Sendable",
+      "Swift.SendableMetatype"
+    ],
+    "allConformances": [
+      {
+        "protocolName": "AppIntents.AppIntent",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.PersistentlyIdentifiable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents._SupportsAppDependencies",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.Sendable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.SendableMetatype",
+        "conformanceDefiningModule": "ProbeD"
+      }
+    ],
+    "associatedTypeAliases": [
+      {
+        "typeAliasName": "PerformResult",
+        "substitutedTypeName": "some AppIntents.IntentResult",
+        "substitutedMangledTypeName": "6ProbeD7AIntentV7performQryYaKFQOy_Qo_",
+        "opaqueTypeProtocolRequirements": [
+          "AppIntents.IntentResult"
+        ],
+        "opaqueTypeSameTypeRequirements": []
+      },
+      {
+        "typeAliasName": "SummaryContent",
+        "substitutedTypeName": "some AppIntents.ParameterSummary",
+        "substitutedMangledTypeName": "10AppIntents0A6IntentPAAE16parameterSummaryQrvpZQOy6ProbeD7AIntentV_Qo_",
+        "opaqueTypeProtocolRequirements": [
+          "AppIntents.ParameterSummary"
+        ],
+        "opaqueTypeSameTypeRequirements": []
+      }
+    ],
+    "properties": [
+      {
+        "label": "_z",
+        "type": "AppIntents.IntentParameter<ProbeD.ZEnum>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "false",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 35,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<ProbeD.ZEnum>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "Z"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "default",
+              "type": "Swift.Optional<ProbeD.ZEnum>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestDisambiguationDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            },
+            {
+              "label": "supportedValues",
+              "type": "Swift.Array<ProbeD.ZEnum>",
+              "valueKind": "Runtime"
+            }
+          ]
+        }
+      },
+      {
+        "label": "_y",
+        "type": "AppIntents.IntentParameter<ProbeD.YEntity>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "false",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 36,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<ProbeD.YEntity>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "Y"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "default",
+              "type": "Swift.Optional<ProbeD.YEntity>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestDisambiguationDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            }
+          ]
+        }
+      },
+      {
+        "label": "_text",
+        "type": "AppIntents.IntentParameter<Swift.String>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "false",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 37,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<Swift.String>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "Text"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "default",
+              "type": "Swift.Optional<Swift.String>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputOptions",
+              "type": "Swift.Optional<Swift.String.IntentInputOptions>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            }
+          ]
+        }
+      },
+      {
+        "label": "title",
+        "type": "Foundation.LocalizedStringResource",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "false",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 34,
+        "valueKind": "RawLiteral",
+        "value": "Alpha: go"
+      },
+      {
+        "label": "z",
+        "type": "ProbeD.ZEnum",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 35,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<ProbeD.ZEnum>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "Z"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "default",
+              "type": "Swift.Optional<ProbeD.ZEnum>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestDisambiguationDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            },
+            {
+              "label": "supportedValues",
+              "type": "Swift.Array<ProbeD.ZEnum>",
+              "valueKind": "Runtime"
+            }
+          ]
+        },
+        "propertyWrappers": [
+          {
+            "type": "AppIntents.IntentParameter",
+            "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+            "line": 35,
+            "arguments": [
+              {
+                "label": "title",
+                "type": "Foundation.LocalizedStringResource",
+                "valueKind": "RawLiteral",
+                "value": "Z"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "$z",
+        "type": "AppIntents.IntentParameter<ProbeD.ZEnum>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 35,
+        "valueKind": "Runtime"
+      },
+      {
+        "label": "y",
+        "type": "ProbeD.YEntity",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 36,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<ProbeD.YEntity>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "Y"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "default",
+              "type": "Swift.Optional<ProbeD.YEntity>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestDisambiguationDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            }
+          ]
+        },
+        "propertyWrappers": [
+          {
+            "type": "AppIntents.IntentParameter",
+            "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+            "line": 36,
+            "arguments": [
+              {
+                "label": "title",
+                "type": "Foundation.LocalizedStringResource",
+                "valueKind": "RawLiteral",
+                "value": "Y"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "$y",
+        "type": "AppIntents.IntentParameter<ProbeD.YEntity>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 36,
+        "valueKind": "Runtime"
+      },
+      {
+        "label": "text",
+        "type": "Swift.String",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 37,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<Swift.String>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "Text"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "default",
+              "type": "Swift.Optional<Swift.String>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputOptions",
+              "type": "Swift.Optional<Swift.String.IntentInputOptions>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            }
+          ]
+        },
+        "propertyWrappers": [
+          {
+            "type": "AppIntents.IntentParameter",
+            "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+            "line": 37,
+            "arguments": [
+              {
+                "label": "title",
+                "type": "Foundation.LocalizedStringResource",
+                "valueKind": "RawLiteral",
+                "value": "Text"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "$text",
+        "type": "AppIntents.IntentParameter<Swift.String>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 37,
+        "valueKind": "Runtime"
+      }
+    ]
+  },
+  {
+    "typeName": "ProbeD.BIntent",
+    "mangledTypeName": "6ProbeD7BIntentV",
+    "kind": "struct",
+    "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+    "line": 40,
+    "conformances": [
+      "AppIntents.AppIntent",
+      "AppIntents.PersistentlyIdentifiable",
+      "AppIntents._SupportsAppDependencies",
+      "Swift.Sendable",
+      "Swift.SendableMetatype"
+    ],
+    "allConformances": [
+      {
+        "protocolName": "AppIntents.AppIntent",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.PersistentlyIdentifiable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents._SupportsAppDependencies",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.Sendable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.SendableMetatype",
+        "conformanceDefiningModule": "ProbeD"
+      }
+    ],
+    "associatedTypeAliases": [
+      {
+        "typeAliasName": "PerformResult",
+        "substitutedTypeName": "some AppIntents.IntentResult",
+        "substitutedMangledTypeName": "6ProbeD7BIntentV7performQryYaKFQOy_Qo_",
+        "opaqueTypeProtocolRequirements": [
+          "AppIntents.IntentResult"
+        ],
+        "opaqueTypeSameTypeRequirements": []
+      },
+      {
+        "typeAliasName": "SummaryContent",
+        "substitutedTypeName": "some AppIntents.ParameterSummary",
+        "substitutedMangledTypeName": "10AppIntents0A6IntentPAAE16parameterSummaryQrvpZQOy6ProbeD7BIntentV_Qo_",
+        "opaqueTypeProtocolRequirements": [
+          "AppIntents.ParameterSummary"
+        ],
+        "opaqueTypeSameTypeRequirements": []
+      }
+    ],
+    "properties": [
+      {
+        "label": "_x",
+        "type": "AppIntents.IntentParameter<ProbeD.XEntity>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "false",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 42,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<ProbeD.XEntity>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "X"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "default",
+              "type": "Swift.Optional<ProbeD.XEntity>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestDisambiguationDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            }
+          ]
+        }
+      },
+      {
+        "label": "title",
+        "type": "Foundation.LocalizedStringResource",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "false",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 41,
+        "valueKind": "RawLiteral",
+        "value": "Beta"
+      },
+      {
+        "label": "x",
+        "type": "ProbeD.XEntity",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 42,
+        "valueKind": "InitCall",
+        "value": {
+          "type": "AppIntents.IntentParameter<ProbeD.XEntity>",
+          "arguments": [
+            {
+              "label": "title",
+              "type": "Foundation.LocalizedStringResource",
+              "valueKind": "RawLiteral",
+              "value": "X"
+            },
+            {
+              "label": "description",
+              "type": "Swift.Optional<Foundation.LocalizedStringResource>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "default",
+              "type": "Swift.Optional<ProbeD.XEntity>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestValueDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "requestDisambiguationDialog",
+              "type": "Swift.Optional<AppIntents.IntentDialog>",
+              "valueKind": "NilLiteral"
+            },
+            {
+              "label": "inputConnectionBehavior",
+              "type": "AppIntents.InputConnectionBehavior",
+              "valueKind": "Runtime"
+            }
+          ]
+        },
+        "propertyWrappers": [
+          {
+            "type": "AppIntents.IntentParameter",
+            "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+            "line": 42,
+            "arguments": [
+              {
+                "label": "title",
+                "type": "Foundation.LocalizedStringResource",
+                "valueKind": "RawLiteral",
+                "value": "X"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "$x",
+        "type": "AppIntents.IntentParameter<ProbeD.XEntity>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "false",
+        "isComputed": "true",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 42,
+        "valueKind": "Runtime"
+      }
+    ]
+  },
+  {
+    "typeName": "ProbeD.CIntent",
+    "mangledTypeName": "6ProbeD7CIntentV",
+    "kind": "struct",
+    "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+    "line": 45,
+    "conformances": [
+      "AppIntents.AppIntent",
+      "AppIntents.PersistentlyIdentifiable",
+      "AppIntents._SupportsAppDependencies",
+      "Swift.Sendable",
+      "Swift.SendableMetatype",
+      "Swift.BitwiseCopyable"
+    ],
+    "allConformances": [
+      {
+        "protocolName": "AppIntents.AppIntent",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents.PersistentlyIdentifiable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "AppIntents._SupportsAppDependencies",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.Sendable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.SendableMetatype",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.BitwiseCopyable",
+        "conformanceDefiningModule": "ProbeD"
+      }
+    ],
+    "associatedTypeAliases": [
+      {
+        "typeAliasName": "PerformResult",
+        "substitutedTypeName": "some AppIntents.IntentResult",
+        "substitutedMangledTypeName": "6ProbeD7CIntentV7performQryYaKFQOy_Qo_",
+        "opaqueTypeProtocolRequirements": [
+          "AppIntents.IntentResult"
+        ],
+        "opaqueTypeSameTypeRequirements": []
+      },
+      {
+        "typeAliasName": "SummaryContent",
+        "substitutedTypeName": "some AppIntents.ParameterSummary",
+        "substitutedMangledTypeName": "10AppIntents0A6IntentPAAE16parameterSummaryQrvpZQOy6ProbeD7CIntentV_Qo_",
+        "opaqueTypeProtocolRequirements": [
+          "AppIntents.ParameterSummary"
+        ],
+        "opaqueTypeSameTypeRequirements": []
+      }
+    ],
+    "properties": [
+      {
+        "label": "title",
+        "type": "Foundation.LocalizedStringResource",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "false",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 46,
+        "valueKind": "RawLiteral",
+        "value": "Gamma"
+      }
+    ]
+  },
+  {
+    "typeName": "ProbeD.Shortcuts",
+    "mangledTypeName": "6ProbeD9ShortcutsV",
+    "kind": "struct",
+    "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+    "line": 49,
+    "conformances": [
+      "AppIntents.AppShortcutsProvider",
+      "Swift.Sendable",
+      "Swift.SendableMetatype",
+      "Swift.BitwiseCopyable"
+    ],
+    "allConformances": [
+      {
+        "protocolName": "AppIntents.AppShortcutsProvider",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.Sendable",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.SendableMetatype",
+        "conformanceDefiningModule": "ProbeD"
+      },
+      {
+        "protocolName": "Swift.BitwiseCopyable",
+        "conformanceDefiningModule": "ProbeD"
+      }
+    ],
+    "associatedTypeAliases": [],
+    "properties": [
+      {
+        "label": "appShortcuts",
+        "type": "Swift.Array<AppIntents.AppShortcut>",
+        "mangledTypeName": "n/a - deprecated",
+        "isStatic": "true",
+        "isComputed": "true",
+        "file": "/var/folders/rn/78kkqh8x2yv2_wj13sfc9qfh0000gn/T/tmp.wjIbvB6YPy/probeD-1086615-109/src/Probe.swift",
+        "line": 50,
+        "valueKind": "Builder",
+        "value": {
+          "type": "AppIntents.AppShortcutsBuilder",
+          "members": [
+            {
+              "kind": "buildExpression",
+              "element": {
+                "valueKind": "InitCall",
+                "value": {
+                  "type": "AppIntents.AppShortcut",
+                  "arguments": [
+                    {
+                      "label": "intent",
+                      "type": "ProbeD.BIntent",
+                      "valueKind": "InitCall",
+                      "value": {
+                        "type": "ProbeD.BIntent",
+                        "arguments": []
+                      }
+                    },
+                    {
+                      "label": "phrases",
+                      "type": "Swift.Array<AppIntents.AppShortcutPhrase<ProbeD.BIntent>>",
+                      "valueKind": "Array",
+                      "value": [
+                        {
+                          "valueKind": "InterpolatedStringLiteral",
+                          "value": {
+                            "segments": [
+                              {
+                                "valueKind": "RawLiteral",
+                                "value": "Beta "
+                              },
+                              {
+                                "valueKind": "Enum",
+                                "value": {
+                                  "name": "applicationName"
+                                }
+                              },
+                              {
+                                "valueKind": "RawLiteral",
+                                "value": ""
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "shortTitle",
+                      "type": "Foundation.LocalizedStringResource",
+                      "valueKind": "RawLiteral",
+                      "value": "B"
+                    },
+                    {
+                      "label": "systemImageName",
+                      "type": "Swift.String",
+                      "valueKind": "RawLiteral",
+                      "value": "b.circle"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "kind": "buildExpression",
+              "element": {
+                "valueKind": "InitCall",
+                "value": {
+                  "type": "AppIntents.AppShortcut",
+                  "arguments": [
+                    {
+                      "label": "intent",
+                      "type": "ProbeD.AIntent",
+                      "valueKind": "InitCall",
+                      "value": {
+                        "type": "ProbeD.AIntent",
+                        "arguments": []
+                      }
+                    },
+                    {
+                      "label": "phrases",
+                      "type": "Swift.Array<AppIntents.AppShortcutPhrase<ProbeD.AIntent>>",
+                      "valueKind": "Array",
+                      "value": [
+                        {
+                          "valueKind": "InterpolatedStringLiteral",
+                          "value": {
+                            "segments": [
+                              {
+                                "valueKind": "RawLiteral",
+                                "value": "Open "
+                              },
+                              {
+                                "valueKind": "KeyPath",
+                                "value": {
+                                  "path": "$z",
+                                  "rootType": "ProbeD.AIntent",
+                                  "components": [
+                                    {
+                                      "label": "$z",
+                                      "type": "AppIntents.IntentParameter<ProbeD.ZEnum>"
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "valueKind": "RawLiteral",
+                                "value": " in "
+                              },
+                              {
+                                "valueKind": "Enum",
+                                "value": {
+                                  "name": "applicationName"
+                                }
+                              },
+                              {
+                                "valueKind": "RawLiteral",
+                                "value": ""
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "valueKind": "InterpolatedStringLiteral",
+                          "value": {
+                            "segments": [
+                              {
+                                "valueKind": "RawLiteral",
+                                "value": "Alpha "
+                              },
+                              {
+                                "valueKind": "Enum",
+                                "value": {
+                                  "name": "applicationName"
+                                }
+                              },
+                              {
+                                "valueKind": "RawLiteral",
+                                "value": " now"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "valueKind": "InterpolatedStringLiteral",
+                          "value": {
+                            "segments": [
+                              {
+                                "valueKind": "RawLiteral",
+                                "value": ""
+                              },
+                              {
+                                "valueKind": "Enum",
+                                "value": {
+                                  "name": "applicationName"
+                                }
+                              },
+                              {
+                                "valueKind": "RawLiteral",
+                                "value": " alpha"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "shortTitle",
+                      "type": "Foundation.LocalizedStringResource",
+                      "valueKind": "RawLiteral",
+                      "value": "A"
+                    },
+                    {
+                      "label": "systemImageName",
+                      "type": "Swift.String",
+                      "valueKind": "RawLiteral",
+                      "value": "a.circle"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "kind": "buildExpression",
+              "element": {
+                "valueKind": "InitCall",
+                "value": {
+                  "type": "AppIntents.AppShortcut",
+                  "arguments": [
+                    {
+                      "label": "intent",
+                      "type": "ProbeD.CIntent",
+                      "valueKind": "InitCall",
+                      "value": {
+                        "type": "ProbeD.CIntent",
+                        "arguments": []
+                      }
+                    },
+                    {
+                      "label": "phrases",
+                      "type": "Swift.Array<AppIntents.AppShortcutPhrase<ProbeD.CIntent>>",
+                      "valueKind": "Array",
+                      "value": [
+                        {
+                          "valueKind": "InterpolatedStringLiteral",
+                          "value": {
+                            "segments": [
+                              {
+                                "valueKind": "RawLiteral",
+                                "value": "Gamma "
+                              },
+                              {
+                                "valueKind": "Enum",
+                                "value": {
+                                  "name": "applicationName"
+                                }
+                              },
+                              {
+                                "valueKind": "RawLiteral",
+                                "value": ""
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "shortTitle",
+                      "type": "Foundation.LocalizedStringResource",
+                      "valueKind": "RawLiteral",
+                      "value": "C"
+                    },
+                    {
+                      "label": "systemImageName",
+                      "type": "Swift.String",
+                      "valueKind": "RawLiteral",
+                      "value": "c.circle"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+]

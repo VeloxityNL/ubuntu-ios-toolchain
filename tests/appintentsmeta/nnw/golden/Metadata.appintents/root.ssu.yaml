@@ -1,0 +1,40 @@
+apiVersion: ssu/v1
+nlu:
+  shortcuts:
+    bundleIdentifier: com.ranchero.NetNewsWire.iOS
+    intents:
+    - metadata:
+        name: AddFeedAppIntent_0
+        title: Add Feed
+      corpuses:
+        training:
+        - locale: en
+          utterances:
+          - '{${+prefix} }Add a feed to ${+applicationName}'
+          - '{${+prefix} }Add feed in ${+applicationName}'
+    - metadata:
+        name: +negative
+      corpuses:
+        training:
+        - locale: en
+          utterances:
+          - '{${+prefix} }${+standardAppShortcutNegatives}'
+variables:
+- name: +applicationName
+  type: ssu/expansion
+  definitions:
+  - locale: en
+    synomyms:
+    - NetNewsWire-iOS
+- name: +prefix
+  type: ssu/expansion
+  definitions:
+  - locale: en
+    synomyms:
+      $ref: ssu://Resources/prefix/en.yaml
+- name: +standardAppShortcutNegatives
+  type: ssu/expansion
+  definitions:
+  - locale: en
+    synomyms:
+      $ref: ssu://Resources/standardAppShortcutNegatives/en.yaml

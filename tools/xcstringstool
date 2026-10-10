@@ -1,0 +1,325 @@
+#!/usr/bin/python3
+"""Linux stand-in for Apple's xcstringstool (String Catalogs), for SwiftBuild under xtool.
+
+SwiftBuild runs `xcstringstool compile [--dry-run] [-l LANG ...] --output-directory DIR FILE` and
+`xcstringstool generate-symbols --language swift --output-directory DIR FILE`. Output matches Apple's
+xcstringstool from Xcode 27, checked file by file against it (FINDINGS.md item 24).
+"""
+import argparse
+import json
+import plistlib
+import re
+import sys
+from pathlib import Path
+
+FORMAT_SPEC = re.compile(r"%(?:\d+\$)?[-+ #0]*\d*(?:\.\d+)?(?:\([^)]*\))?(hh|h|ll|l|q|z|t|j|L)?([@dDiuUxXoOfeEgGcCsSpaA])")
+NUMERIC_SPEC = re.compile(r"%(?:\d+\$)?[-+ #0]*\d*(?:\.\d+)?(?:\([^)]*\))?(hh|h|ll|l|q|z|t|j|L)?([dDiuUxXoOfeEgGaA])")
+NAMED_SPEC = re.compile(r"(%(?:\d+\$)?[-+ #0]*\d*)\([^)]*\)((?:hh|h|ll|l|q|z|t|j|L)?[@dDiuUxXoOfeEgGcCsSpaA])")
+NAMED_IN_CASE = re.compile(r"%(\d+\$)?[-+ #0]*\d*\(([^)]*)\)((?:hh|h|ll|l|q|z|t|j|L)?[@dDiuUxXoOfeEgGcCsSpaA])")
+
+
+def die(msg):
+    print(f"error: {msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+def value_type(text):
+    """The NSStringFormatValueTypeKey for the first numeric format specifier in text, or None."""
+    for m in FORMAT_SPEC.finditer(text.replace("%%", "")):
+        if m.group(2) != "@":
+            return (m.group(1) or "") + m.group(2)
+    return None
+
+
+def unit_value(node, strip=True):
+    v = node.get("stringUnit", {}).get("value")
+    if isinstance(v, str) and strip:
+        # Apple compiles printf-style named arguments away in plain strings:
+        # %(used)lld and %1$(limit)lld become %lld and %1$lld.
+        return NAMED_SPEC.sub(r"\1\2", v)
+    return v
+
+
+def rule(variations, strip=True):
+    """A stringsdict rule for one level of plural or device variations, recursing into nesting.
+    Plural case names survive when strip=False so entry_for can positionalize them."""
+    if "plural" in variations:
+        cases = {c: rendered(n, strip) for c, n in variations["plural"].items()}
+        cases = {c: v for c, v in cases.items() if v is not None}
+        return "plural", cases
+    if "device" in variations:
+        cases = {c: rendered(n, strip) for c, n in variations["device"].items()}
+        return "device", {c: v for c, v in cases.items() if v is not None}
+    return None, {}
+
+
+def rendered(node, strip=True):
+    """A leaf string, or a nested stringsdict fragment for nested variations."""
+    if "variations" in node:
+        return entry_for(node)[0]
+    return unit_value(node, strip)
+
+
+def plural_dict(cases, fmt):
+    d = {"NSStringFormatSpecTypeKey": "NSStringPluralRuleType", "NSStringFormatValueTypeKey": fmt}
+    d.update(cases)
+    return d
+
+
+def positionalize(cases, count_name=None):
+    """Apple numbers the printf-style named arguments of a plural localization in order of
+    first appearance: explicit %1$(count)lld keeps its position and loses the name; bare
+    named args get the next free position; a lone bare count stays unnumbered (%lld); a
+    named argument without a conversion stays verbatim but still consumes a position. The
+    plural format key points at the count argument's position (%2$#@value@). Returns
+    (cases, format key, count name)."""
+    texts = [v for v in cases.values() if isinstance(v, str)]
+    used = {int(m.group(1)) for t in texts for m in re.finditer(r"%(\d+)\$", t)}
+    CONV = re.compile(r"(?:hh|h|ll|l|q|z|t|j|L)?[@dDiuUxXoOfeEgGcCsSpaA]")
+    names = {}  # name -> (position, spec or None, bare)
+    for t in texts:
+        for m in re.finditer(r"%(\d+\$)?[-+ #0]*\d*\(([^)]*)\)", t):
+            name = m.group(2)
+            if name in names:
+                continue
+            conv = CONV.match(t[m.end():])
+            bare = not m.group(1)
+            nxt = 1
+            while nxt in used or any(p == nxt for p, _, _ in names.values()):
+                nxt += 1
+            names[name] = (nxt, conv.group(0) if conv else None, bare)
+
+    def rewrite(text):
+        def repl(m):
+            pos, name, spec = m.group(1), m.group(2), m.group(3)
+            if pos:
+                return f"%{pos}{spec}"
+            p, sp, _ = names.get(name, (None, None, False))
+            return f"%{p}${sp}" if sp else m.group(0)
+        return NAMED_IN_CASE.sub(repl, text)
+
+    if count_name is None:
+        numeric = [n for n, (_, s, _) in names.items() if s and s[-1] in "dDiuUxXoO"]
+        count_name = numeric[0] if numeric else None
+    if len(names) == 1 and not used:
+        # A single argument never gets numbered: a converted count is stripped
+        # (%(boostCount)lld -> %lld), a malformed one stays verbatim; no position lands
+        # in the format key either way.
+        spec = names[count_name][1] if count_name in names else None
+        if spec is not None:
+            cases = {c: NAMED_IN_CASE.sub("%" + spec, v) if isinstance(v, str) else v
+                     for c, v in cases.items()}
+        return cases, "%#@value@", count_name
+    cases = {c: rewrite(v) if isinstance(v, str) else v for c, v in cases.items()}
+    # A synthesized (bare) count position lands in the format key; an explicit one is
+    # already placed in the text.
+    if count_name and names.get(count_name, (0, None, False))[2]:
+        return cases, f"%{names[count_name][0]}$#@value@", count_name
+    return cases, "%#@value@", count_name
+
+
+def entry_for(loc, fallback_fmt=None, src_count=None):
+    """stringsdict value for a localization with variations or substitutions, else None."""
+    if "substitutions" in loc:
+        # "%arg" stands for the substitution's own argument; with an argNum both it and the
+        # %#@name@ reference become positional.
+        fmt_key = unit_value(loc)
+        entry = {}
+        for name, sub in loc["substitutions"].items():
+            spec, num = sub.get("formatSpecifier", "d"), sub.get("argNum")
+            pos = f"{num}$" if num else ""
+            if num:
+                fmt_key = fmt_key.replace(f"%#@{name}@", f"%{pos}#@{name}@")
+            kind, cases = rule(sub.get("variations", {}))
+            if kind == "plural":
+                cases = {c: v.replace("%arg", f"%{pos}{spec}") if isinstance(v, str) else v
+                         for c, v in cases.items()}
+                entry[name] = plural_dict(cases, spec)
+        entry["NSStringLocalizedFormatKey"] = fmt_key
+        return entry, None
+    if "variations" in loc:
+        kind, cases = rule(loc["variations"], strip=False)
+        if kind == "plural":
+            cases, fmt_key, count_name = positionalize(cases, src_count)
+            sample = cases.get("other") or next(iter(cases.values()), "")
+            fmt = value_type(sample if isinstance(sample, str) else "") or fallback_fmt or "d"
+            return {"NSStringLocalizedFormatKey": fmt_key, "value": plural_dict(cases, fmt)}, count_name
+        if kind == "device":
+            return {"NSStringDeviceSpecificRuleType": cases}, None
+    return None, None
+
+
+def validate_variations(variations, lang, key, where, top):
+    """Apple's compile-time checks, probed against Xcode 27: a top-level plural must reference
+    the number and no plural case may nest; substitution plurals are only checked for nesting."""
+    out = []
+    if "plural" in variations:
+        for case, node in variations["plural"].items():
+            if isinstance(node, dict) and "variations" in node:
+                out.append(("error", f"Plural case cannot be further varied ({lang}: {key}|==|{where}plural.{case})"))
+                continue
+            specs = list(NUMERIC_SPEC.finditer((unit_value(node) or "").replace("%%", "")))
+            if top and len(specs) > 1:
+                spec = "%" + specs[0].group(2)
+                out.append(("warning", f"Cannot reliably infer argument number for plural variation because {spec} "
+                                       f"is used in multiple positions. Use an explicit substitution instead. ({lang}: {key})"))
+        if top and not any(NUMERIC_SPEC.search((unit_value(n) or "").replace("%%", ""))
+                           or re.search(r"%\([^)]*\)", unit_value(n) or "")
+                           for n in variations["plural"].values()
+                           if not (isinstance(n, dict) and "variations" in n)):
+            out.append(("error", "Plural variation requires referencing the number in the string. To maintain "
+                                 "grammatical correctness for strings that do not reference the number of items, "
+                                 "use separate top-level strings for one and greater than one. "
+                                 f"({lang}: {key})"))
+    for case, node in variations.get("device", {}).items():
+        if isinstance(node, dict) and "variations" in node:
+            out += validate_variations(node["variations"], lang, key, where, top)
+    return out
+
+
+def validate_substitutions(loc, lang, key):
+    out = []
+    for name, sub in (loc.get("substitutions") or {}).items():
+        kind = sub.get("variations", {})
+        if kind and "plural" not in kind:
+            out.append(("error", f"Cannot reference substitution '{name}' from here because it is not a plain "
+                                 f"string or plural variation ({lang}: {key})"))
+        elif "plural" in kind:
+            out += validate_variations(kind, lang, key, f"substitutions.{name}.", top=False)
+    return out
+
+
+def compile_tables(catalog, languages, diags):
+    """{language: (strings dict, stringsdict dict)}"""
+    source = catalog["sourceLanguage"]
+    strings = catalog.get("strings", {})
+    found = {source}
+    for e in strings.values():
+        found.update((e.get("localizations") or {}).keys())
+    langs = sorted(found if not languages else found & set(languages))
+    # A language whose own plural cases lost the format specifier (crowdin drift) still gets
+    # the source language's NSStringFormatValueTypeKey.
+    src_types = {}
+    src_counts = {}
+    for key, e in strings.items():
+        src_loc = (e.get("localizations") or {}).get(source)
+        if src_loc and ("variations" in src_loc or "substitutions" in src_loc):
+            try:
+                entry, count_name = entry_for(src_loc)
+            except Exception:
+                entry, count_name = None, None
+            if isinstance(entry, dict) and "value" in entry:
+                src_types[key] = entry["value"].get("NSStringFormatValueTypeKey")
+                src_counts[key] = count_name
+    out = {}
+    for lang in langs:
+        st, sd = {}, {}
+        for key, e in strings.items():
+            locs = e.get("localizations") or {}
+            loc = locs.get(lang)
+            if loc is None:
+                # Apple writes the key as its own value for manually managed keys: in the
+                # source language when it has no localization, and in every other language
+                # when the source localization is itself a format (specifiers, variations or
+                # substitutions) — probed: p1/p5, IceCubes followers, Mastodon addAccountToList.
+                src = locs.get(source)
+                src_is_format = src is not None and (
+                    "variations" in src or "substitutions" in src
+                    or FORMAT_SPEC.search((src.get("stringUnit") or {}).get("value") or ""))
+                if e.get("extractionState") == "manual" and (
+                        (lang == source and src is None) or (lang != source and src_is_format)):
+                    st[key] = key
+                continue
+            probs = []
+            if "variations" in loc:
+                probs += validate_variations(loc["variations"], lang, key, "",
+                                             top=lang == source)
+            if "substitutions" in loc:
+                probs += validate_substitutions(loc, lang, key)
+            if any(k == "error" for k, _ in probs):
+                diags += probs
+                continue
+            diags += probs
+            if lang == source and "variations" not in loc and "substitutions" not in loc \
+                    and (loc.get("stringUnit") or {}).get("state") == "new":
+                # A fresh source-language string has no output: the key is its own value.
+                continue
+            device = loc.get("variations", {}).get("device", {})
+            if "other" in device:
+                # The device "other" case is the plain-string fallback, outside the device rule.
+                if "variations" in device["other"]:
+                    diags.append(("error", f"Fallback value cannot be further varied ({lang}: {key}|==|device.other)"))
+                    continue
+                st[key] = unit_value(device["other"])
+                loc = {**loc, "variations": {"device": {d: v for d, v in device.items() if d != "other"}}}
+            entry, _ = entry_for(loc, fallback_fmt=src_types.get(key), src_count=src_counts.get(key))
+            if entry is not None:
+                sd[key] = entry
+            elif unit_value(loc) is not None:
+                st[key] = unit_value(loc)
+        out[lang] = (st, sd)
+    return out
+
+
+def cmd_compile(args):
+    catalog = json.loads(Path(args.input).read_text())
+    table = Path(args.input).stem
+    outdir = Path(args.output_directory)
+    diags = []
+    planned = []
+    for lang, (st, sd) in compile_tables(catalog, args.language, diags).items():
+        if args.format == "stringsdictOnly":
+            st, sd = {}, {**st, **sd}
+        for ext, data in (("strings", st), ("stringsdict", sd)):
+            if data:
+                planned.append((outdir / f"{lang}.lproj" / f"{table}.{ext}", data))
+    for kind, msg in diags:
+        print(f"{args.input}: {kind}: {msg}", file=sys.stderr)
+    if args.dry_run:
+        for path, _ in planned:
+            print(path.resolve())
+        if any(k == "error" for k, _ in diags):
+            sys.exit(1)
+        return
+    fmt = plistlib.FMT_BINARY if args.serialization_format == "binary" else plistlib.FMT_XML
+    for path, data in planned:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(plistlib.dumps(data, fmt=fmt, sort_keys=True))
+    if any(k == "error" for k, _ in diags):
+        sys.exit(1)
+
+
+def cmd_generate_symbols(args):
+    if args.language != ["swift"]:
+        die("only --language swift is supported")
+    from xcstrings_symbols import swift_symbols  # noqa: PLC0415  (sibling module, loaded on demand)
+    path = Path(args.input)
+    outdir = Path(args.output_directory)
+    outdir.mkdir(parents=True, exist_ok=True)
+    (outdir / f"GeneratedStringSymbols_{path.stem}.swift").write_text(
+        swift_symbols(json.loads(path.read_text()), path.name, path.stem))
+
+
+def main():
+    p = argparse.ArgumentParser(prog="xcstringstool")
+    sub = p.add_subparsers(dest="command", required=True)
+    c = sub.add_parser("compile")
+    c.add_argument("input")
+    c.add_argument("-o", "--output-directory", required=True)
+    c.add_argument("-f", "--format", default="stringsAndStringsdict",
+                   choices=["stringsAndStringsdict", "stringsdictOnly"])
+    c.add_argument("-l", "--language", action="append", default=[])
+    c.add_argument("--serialization-format", default="text", choices=["text", "binary"])
+    c.add_argument("--dry-run", action="store_true")
+    c.add_argument("--force-build-all-strings", action="store_true")
+    g = sub.add_parser("generate-symbols")
+    g.add_argument("input")
+    g.add_argument("-o", "--output-directory", required=True)
+    g.add_argument("-l", "--language", action="append", required=True)
+    args = p.parse_args()
+    {"compile": cmd_compile, "generate-symbols": cmd_generate_symbols}[args.command](args)
+
+
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    main()
