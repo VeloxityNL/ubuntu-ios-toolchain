@@ -1,0 +1,35 @@
+name: Bug report
+description: Report an Ubuntu iOS toolchain problem
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve Ubuntu iOS Toolchain.
+  - type: input
+    id: ubuntu
+    attributes:
+      label: Ubuntu version
+      placeholder: Ubuntu 24.04 LTS x86_64
+    validations:
+      required: true
+  - type: input
+    id: swift
+    attributes:
+      label: Swift version
+      placeholder: swift --version
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Include the command you ran and the relevant error output. Remove credentials and signing secrets first.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
