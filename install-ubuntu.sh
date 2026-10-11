@@ -15,7 +15,7 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
  build-essential git curl ca-certificates pkg-config autoconf automake libtool cmake ninja-build \
  python3 python3-venv python3-pip unzip zip xz-utils zstd rsync jq \
  libssl-dev libcurl4-openssl-dev libxml2-dev libsqlite3-dev libedit-dev libncurses-dev \
- libusb-1.0-0-dev usbmuxd libusbmuxd-dev libimobiledevice-dev libplist-dev poppler-utils libheif-examples
+ libusb-1.0-0-dev usbmuxd libusbmuxd-dev libimobiledevice-dev libimobiledevice-utils libplist-dev poppler-utils libheif-examples
 
 if [[ ! -x "$SWIFT_PREFIX/usr/bin/swift" ]]; then
   URL="https://download.swift.org/swift-${SWIFT_VERSION}-release/ubuntu2404/swift-${SWIFT_VERSION}-RELEASE/swift-${SWIFT_VERSION}-RELEASE-ubuntu24.04.tar.gz"

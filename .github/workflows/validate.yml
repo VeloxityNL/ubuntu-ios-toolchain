@@ -13,7 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Syntax-check shell entry points
-        run: bash -n install-ubuntu.sh ubuntu-ios ship.sh
+        run: bash -n install-ubuntu.sh ubuntu-ios ship.sh tests/test-doctor.sh
+      - name: Test ubuntu-ios doctor state handling
+        run: ./tests/test-doctor.sh
       - name: Reject accidentally committed signing secrets
         shell: bash
         run: |

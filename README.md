@@ -159,6 +159,18 @@ The included signing changes preserve supported requested capabilities when they
 
 USB communication uses `usbmuxd`, the libimobiledevice ecosystem, and `pymobiledevice3`. Trust/pair the Ubuntu host with the iPhone first. `device-run.sh` contains the lower-level device workflow.
 
+`ubuntu-ios doctor` now keeps **USB detection** and **pairing/trust** as separate diagnostics:
+
+```bash
+ubuntu-ios doctor
+ubuntu-ios doctor --device   # fail if no ready physical iPhone is available
+```
+
+- `idevice_id -l` answers whether `usbmuxd` can see the device at all. If this fails, check the cable, USB access/udev rules and `usbmuxd`.
+- `idevicepair validate` checks the separate lockdown pairing/trust state. The doctor reports common states such as not paired, waiting for the Trust dialog, denied trust, or a locked/passcode-protected device instead of reducing everything to one generic failure.
+
+A visible UDID does **not** prove that lockdown pairing is valid. Keeping these checks separate makes it clearer whether to investigate Linux USB access or the iPhone's trust/unlock state. There is no iOS Simulator on Ubuntu, so runtime testing requires a physical device or TestFlight.
+
 ## Ubuntu-specific library handling
 
 Ubuntu 24.04's packaged libplist/libimobiledevice versions can be older than the ABI expected by the pinned iOS build stack. `install-ubuntu.sh` builds these into a private user prefix:

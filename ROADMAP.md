@@ -5,6 +5,7 @@
 - Validate the installer on more clean Ubuntu 24.04 machines.
 - Expand reproducible smoke tests.
 - Improve diagnostics for SDK, signing and App Store Connect setup.
+- Expand device diagnostics beyond pairing into deploy/debug readiness where reliable APIs are available.
 - Add more minimal sample projects and CI examples.
 - Document ARM64 Ubuntu support as it matures.
 

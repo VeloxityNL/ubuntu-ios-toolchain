@@ -1,14 +1,138 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+status() { printf '%-22s %s\n' "$1" "$2"; }
+have() { command -v "$1" >/dev/null 2>&1; }
+first_line() { "$@" 2>&1 | head -n1 || true; }
+
+doctor() {
+  local require_device=0 failures=0
+  if [[ "${1:-}" == "--device" ]]; then require_device=1; shift; fi
+  if [[ $# -gt 0 ]]; then
+    echo "Usage: ubuntu-ios doctor [--device]" >&2
+    return 2
+  fi
+
+  echo "== Toolchain =="
+  if [[ -r /etc/os-release ]]; then
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    status "OS" "${PRETTY_NAME:-Linux}"
+  else
+    status "OS" "$(uname -srm)"
+  fi
+
+  if have swift; then
+    status "Swift" "$(first_line swift --version)"
+  else
+    status "Swift" "MISSING"
+    failures=$((failures + 1))
+  fi
+  if have xtool; then
+    status "xtool" "$(first_line xtool --version)"
+  else
+    status "xtool" "MISSING"
+    failures=$((failures + 1))
+  fi
+  if have rcodesign; then
+    status "rcodesign" "$(first_line rcodesign --version)"
+  else
+    status "rcodesign" "MISSING"
+    failures=$((failures + 1))
+  fi
+
+  if have swift; then
+    local sdk_output
+    sdk_output="$(swift sdk list 2>&1 || true)"
+    if grep -qi 'darwin' <<<"$sdk_output"; then
+      status "Darwin SDK" "installed"
+    else
+      status "Darwin SDK" "not installed"
+      failures=$((failures + 1))
+    fi
+  else
+    status "Darwin SDK" "unknown (Swift missing)"
+  fi
+
+  echo
+  echo "== Physical iPhone / USB =="
+
+  if have usbmuxd; then
+    status "usbmuxd binary" "$(command -v usbmuxd)"
+  else
+    status "usbmuxd binary" "MISSING (install usbmuxd)"
+    (( require_device )) && failures=$((failures + 1))
+  fi
+
+  local mux_state="not running / waiting for device"
+  if pgrep -x usbmuxd >/dev/null 2>&1; then
+    mux_state="running"
+  elif [[ -S /var/run/usbmuxd || -S /run/usbmuxd ]]; then
+    mux_state="socket available"
+  elif have systemctl && systemctl is-active --quiet usbmuxd.service 2>/dev/null; then
+    mux_state="service active"
+  fi
+  status "usbmuxd state" "$mux_state"
+
+  if ! have idevice_id; then
+    status "Device detection" "UNAVAILABLE (install libimobiledevice-utils)"
+    (( require_device )) && failures=$((failures + 1))
+  elif ! have idevicepair; then
+    status "Device detection" "idevice_id available"
+    status "Pairing state" "UNAVAILABLE (idevicepair missing)"
+    (( require_device )) && failures=$((failures + 1))
+  else
+    local devices=() udid detect_output detect_rc pair_output pair_rc pair_lc pair_state
+    detect_output="$(idevice_id -l 2>&1)" && detect_rc=0 || detect_rc=$?
+    if (( detect_rc != 0 )); then
+      status "Device detection" "ERROR: ${detect_output//$'\n'/ }"
+      status "Pairing state" "not checked (detection failed)"
+      (( require_device )) && failures=$((failures + 1))
+    else
+      mapfile -t devices < <(printf '%s\n' "$detect_output" | sed '/^[[:space:]]*$/d')
+    fi
+    if (( detect_rc == 0 )) && (( ${#devices[@]} == 0 )); then
+      status "Device detection" "no USB iPhone detected"
+      status "Pairing state" "not checked (no device)"
+      (( require_device )) && failures=$((failures + 1))
+    elif (( detect_rc == 0 )); then
+      status "Device detection" "${#devices[@]} device(s) visible to usbmuxd"
+      for udid in "${devices[@]}"; do
+        pair_output="$(idevicepair -u "$udid" validate 2>&1)" && pair_rc=0 || pair_rc=$?
+        pair_lc="$(tr '[:upper:]' '[:lower:]' <<<"$pair_output")"
+        if (( pair_rc == 0 )); then
+          pair_state="paired and trusted"
+        elif grep -Eq 'not paired|no pairing record|pair record.*not' <<<"$pair_lc"; then
+          pair_state="not paired with this host"
+        elif grep -Eq 'trust.*(dialog|pending|response)|accept.*trust' <<<"$pair_lc"; then
+          pair_state="waiting for Trust This Computer response"
+        elif grep -Eq 'denied|declined|user.*reject' <<<"$pair_lc"; then
+          pair_state="trust request denied on device"
+        elif grep -Eq 'passcode|locked|unlock' <<<"$pair_lc"; then
+          pair_state="device locked; unlock it first"
+        else
+          pair_state="pairing validation failed (exit $pair_rc)"
+        fi
+        status "Pairing $udid" "$pair_state"
+        if (( require_device )) && (( pair_rc != 0 )); then failures=$((failures + 1)); fi
+      done
+    fi
+  fi
+
+  echo
+  if (( require_device )); then
+    echo "Device mode: --device requires a visible, paired/trusted iPhone."
+  else
+    echo "Tip: run 'ubuntu-ios doctor --device' to require a ready physical iPhone."
+  fi
+  echo "Note: Ubuntu has no iOS Simulator; runtime testing requires physical hardware or TestFlight."
+
+  (( failures == 0 )) || return 1
+}
+
 case "${1:-help}" in
-  doctor)
-    echo "OS: $(. /etc/os-release; echo "$PRETTY_NAME")"
-    echo "Swift: $(swift --version | head -1)"
-    echo "xtool: $(xtool --version 2>&1 | head -1)"
-    echo "rcodesign: $(rcodesign --version 2>&1 | head -1)"
-    echo -n "Darwin SDK: "; swift sdk list 2>/dev/null || echo "not installed"
-    ;;
+  doctor) shift; doctor "$@" ;;
   sdk)
     [[ -f "${2:-}" ]] || { echo "Usage: ubuntu-ios sdk /path/to/Xcode.xip" >&2; exit 2; }
     XCODE_XIP="$(readlink -f "$2")" "$ROOT/install-toolchain-upstream.sh" --user-only
@@ -20,7 +144,7 @@ case "${1:-help}" in
 ubuntu-ios - build, sign and ship iOS apps from Ubuntu Linux
 
 Commands:
-  ubuntu-ios doctor
+  ubuntu-ios doctor [--device]
   ubuntu-ios sdk /path/to/Xcode.xip
   ubuntu-ios convert PROJECT --target TARGET --out DIR --bundle-id ID
   ubuntu-ios build
